@@ -43,6 +43,9 @@ export const iacr: Source = {
   async search(query, opts) {
     const html = await getText(`${BASE}/search?${qs({ q: query })}`);
     let papers = parseIacrHtml(html);
+    if (!papers.length && !/No results/i.test(html)) {
+      throw new Error("IACR returned a page without results (likely a bot challenge for this IP).");
+    }
     if (opts.year) papers = papers.filter((p) => p.paper_id.startsWith(opts.year!.slice(0, 4)));
     return papers.slice(0, opts.maxResults);
   },

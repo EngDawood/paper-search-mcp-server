@@ -42,6 +42,10 @@ const cases = [
   ["search_eric", { query: "active learning", max_results: 2 }],
   ["search_inspirehep", { query: "higgs boson", max_results: 2 }],
   ["get_paper_by_doi", { doi: "10.1038/nature14539" }],
+  // OpenAlex tools only exist when OPENALEX_API_KEY is set; skipped otherwise.
+  ["search_openalex", { query: "large language models", max_results: 2, year: "2024" }],
+  ["get_openalex_work", { id: "10.1038/nature14539" }],
+  ["get_openalex_citations", { id: "10.1038/nature14539", direction: "citing", max_results: 2 }],
   ["get_paper_details", { paper_id: "arXiv:1706.03762" }],
   ["get_citing_papers", { paper_id: "1706.03762", max_results: 2 }],
   ["get_referenced_papers", { paper_id: "1706.03762", max_results: 2 }],
@@ -54,6 +58,10 @@ const tools = (await rpc("tools/list", {})).tools.map((t) => t.name);
 console.log(`${tools.length} tools: ${tools.join(", ")}\n`);
 let failed = 0;
 for (const [name, args] of cases) {
+  if (!tools.includes(name)) {
+    console.log(`SKIP ${name.padEnd(24)} (not enabled on this server)`);
+    continue;
+  }
   // arXiv asks for one request every 3 s.
   if (/arxiv/.test(name) || (name === "read_paper" && args.source === "arxiv") || name === "search_papers") await new Promise((r) => setTimeout(r, 3500));
   const t0 = Date.now();
