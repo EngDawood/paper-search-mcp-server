@@ -16,4 +16,5 @@
   //   MCP_AUTH_TOKEN            protect /mcp with a bearer token
   //   NCBI_API_KEY              higher PubMed/PMC rate limits
   //   SEMANTIC_SCHOLAR_API_KEY  dedicated Semantic Scholar rate limit
+  //   OPENALEX_API_KEY          enables the OpenAlex source and tools
 }

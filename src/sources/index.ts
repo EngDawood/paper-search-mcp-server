@@ -1,4 +1,4 @@
-import type { Source } from "../types";
+import type { Env, Source } from "../types";
 import { arxiv } from "./arxiv";
 import { biorxiv, medrxiv } from "./biorxiv";
 import { crossref } from "./crossref";
@@ -11,6 +11,7 @@ import { iacr } from "./iacr";
 import { inspirehep } from "./inspirehep";
 import { pmc, pubmed } from "./ncbi";
 import { openaire } from "./openaire";
+import { openalex } from "./openalex";
 import { openreview } from "./openreview";
 import { semantic } from "./semantic";
 import { zbmath } from "./zbmath";
@@ -38,7 +39,20 @@ export const SOURCES: Source[] = [
   inspirehep,
 ];
 
-export const SOURCE_MAP = new Map(SOURCES.map((s) => [s.id, s]));
+/** Sources that need an API key; enabled only when the key is configured. */
+export const KEYED_SOURCES: { source: Source; enabled: (env: Env) => boolean }[] = [
+  { source: openalex, enabled: (env) => !!env.OPENALEX_API_KEY },
+];
+
+export function activeSources(env: Env): Source[] {
+  return [...SOURCES, ...KEYED_SOURCES.filter((k) => k.enabled(env)).map((k) => k.source)];
+}
+
+export const SOURCE_MAP = new Map([...SOURCES, ...KEYED_SOURCES.map((k) => k.source)].map((s) => [s.id, s]));
 
 /** Fast, broad sources used by search_papers when no sources are given. */
-export const DEFAULT_SOURCES = ["arxiv", "pubmed", "crossref", "semantic", "europepmc", "openreview"];
+const BASE_DEFAULTS = ["arxiv", "pubmed", "crossref", "semantic", "europepmc", "openreview"];
+
+export function defaultSources(env: Env): string[] {
+  return env.OPENALEX_API_KEY ? [...BASE_DEFAULTS, "openalex"] : BASE_DEFAULTS;
+}

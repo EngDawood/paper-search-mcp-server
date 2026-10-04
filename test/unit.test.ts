@@ -94,3 +94,15 @@ describe("dedupe", () => {
     expect(out[0].extra?.found_in).toEqual(["crossref", "semantic"]);
   });
 });
+
+describe("OpenAlex", async () => {
+  const { invertedIndexToText, openalexId } = await import("../src/sources/openalex");
+  it("rebuilds abstracts from the inverted index", () => {
+    expect(invertedIndexToText({ Deep: [0], learning: [1, 3], is: [2] })).toBe("Deep learning is learning");
+    expect(invertedIndexToText(null)).toBe("");
+  });
+  it("normalizes ids", () => {
+    expect(openalexId("https://openalex.org/W2741809807")).toBe("W2741809807");
+    expect(openalexId("https://doi.org/10.1038/nature14539")).toBe("doi:10.1038/nature14539");
+  });
+});
