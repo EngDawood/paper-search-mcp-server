@@ -110,15 +110,18 @@ Claude Desktop / others (via `mcp-remote`):
 - Phase 2 (free API keys): OpenAlex (now key-gated in practice), CORE, IEEE Xplore, Springer Nature, NASA ADS.
 - Phase 3 (paid or institutional): Scopus, Web of Science, ScienceDirect.
 
-## Credits
+## Acknowledgements
 
-Endpoints and parsing approaches were adapted from
-[openags/paper-search-mcp](https://github.com/openags/paper-search-mcp),
-[adamamer20/paper-search-mcp-openai](https://github.com/adamamer20/paper-search-mcp-openai),
-[Dianel555/paper-search-mcp-nodejs](https://github.com/Dianel555/paper-search-mcp-nodejs),
-[prashalruchiranga/arxiv-mcp-server](https://github.com/prashalruchiranga/arxiv-mcp-server),
-[lecigarevolant/arxiv-mcp-server-gpt](https://github.com/lecigarevolant/arxiv-mcp-server-gpt),
-[alexgenovese/mcp-arxiv](https://github.com/alexgenovese/mcp-arxiv),
-[tfscharff/doi-mcp](https://github.com/tfscharff/doi-mcp) (zbMATH, ERIC, INSPIRE-HEP) and
-[kyeshmz/academix-mcp](https://github.com/kyeshmz/academix-mcp).
-This is a fresh TypeScript implementation; no code was copied verbatim.
+This server is a fresh TypeScript implementation written for Cloudflare Workers. No code was copied verbatim.
+The projects below were used as references for API endpoints, query patterns and source coverage. Thanks to their authors.
+
+| Project | What it informed |
+|---|---|
+| [openags/paper-search-mcp](https://github.com/openags/paper-search-mcp) | Main reference: source list, endpoints, bioRxiv/medRxiv recent-window search, OpenReview and IACR handling |
+| [adamamer20/paper-search-mcp-openai](https://github.com/adamamer20/paper-search-mcp-openai) | Fork of the above; Crossref and Semantic Scholar usage |
+| [Dianel555/paper-search-mcp-nodejs](https://github.com/Dianel555/paper-search-mcp-nodejs) | Node/TypeScript structure for multi-source searchers |
+| [prashalruchiranga/arxiv-mcp-server](https://github.com/prashalruchiranga/arxiv-mcp-server) | arXiv field search (title, author, category, dates) |
+| [lecigarevolant/arxiv-mcp-server-gpt](https://github.com/lecigarevolant/arxiv-mcp-server-gpt) | arXiv lookup by id and full-text loading |
+| [alexgenovese/mcp-arxiv](https://github.com/alexgenovese/mcp-arxiv) | arXiv Atom XML parsing in TypeScript |
+| [tfscharff/doi-mcp](https://github.com/tfscharff/doi-mcp) | Idea and endpoints for zbMATH, ERIC and INSPIRE-HEP |
+| [kyeshmz/academix-mcp](https://github.com/kyeshmz/academix-mcp) | Reference for an MCP server running on Cloudflare Workers |
