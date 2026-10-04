@@ -1,6 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createServer, VERSION } from "./server";
-import { SOURCES } from "./sources";
+import { activeSources } from "./sources";
 import type { Env } from "./types";
 
 const CORS = {
@@ -70,7 +70,7 @@ export default {
         mcp_endpoint: `${url.origin}/mcp`,
         transport: "streamable-http (stateless, JSON responses)",
         auth: env.MCP_AUTH_TOKEN ? "bearer token required" : "none",
-        sources: SOURCES.map((s) => ({ id: s.id, name: s.name })),
+        sources: activeSources(env).map((s) => ({ id: s.id, name: s.name })),
       });
     }
     return new Response("Not found", { status: 404 });

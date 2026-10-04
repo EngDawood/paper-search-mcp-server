@@ -30,7 +30,15 @@ Phase 1 covers **18 sources that need no API key**.
 | `eric` | ERIC | Education research |
 | `inspirehep` | INSPIRE-HEP | High-energy physics |
 
-## Tools (27)
+## Sources with an API key
+
+| id | Source | Secret | Adds tools |
+|---|---|---|---|
+| `openalex` | OpenAlex (250M+ works, all disciplines) | `OPENALEX_API_KEY` (free at openalex.org) | `search_openalex`, `get_openalex_work`, `get_openalex_citations`; also joins the `search_papers` defaults |
+
+These tools only appear when the secret is set.
+
+## Tools (27 without keys, 30 with OpenAlex)
 
 | Tool | Purpose |
 |---|---|
@@ -73,6 +81,7 @@ CONTACT_EMAIL = "you@example.com"     # enables Unpaywall; polite pool for Cross
 npx wrangler secret put MCP_AUTH_TOKEN            # require Authorization: Bearer <token> on /mcp
 npx wrangler secret put NCBI_API_KEY              # PubMed/PMC 3 -> 10 req/s
 npx wrangler secret put SEMANTIC_SCHOLAR_API_KEY  # free key, avoids the shared 429 pool
+npx wrangler secret put OPENALEX_API_KEY          # enables OpenAlex search and citation graph
 ```
 
 `wrangler.jsonc` sets `limits.cpu_ms = 60000` because PDF parsing is CPU-heavy, and that setting requires the **Workers Paid** plan.
@@ -107,7 +116,7 @@ Claude Desktop / others (via `mcp-remote`):
 
 ## Roadmap
 
-- Phase 2 (free API keys): OpenAlex (now key-gated in practice), CORE, IEEE Xplore, Springer Nature, NASA ADS.
+- Phase 2 (free API keys): OpenAlex (done), CORE, IEEE Xplore, Springer Nature, NASA ADS.
 - Phase 3 (paid or institutional): Scopus, Web of Science, ScienceDirect.
 
 ## Acknowledgements

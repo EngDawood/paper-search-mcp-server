@@ -6,10 +6,11 @@ import { europePmcFullText } from "./lib/fulltext";
 import { fetchPdf, pdfToText } from "./lib/pdf";
 import { findOpenAccessPdf, pdfUrlFor } from "./lib/resolve";
 import { extractDoi } from "./lib/text";
-import { SOURCES, DEFAULT_SOURCES, SOURCE_MAP } from "./sources";
+import { activeSources, defaultSources, SOURCE_MAP } from "./sources";
 import { queryArxiv } from "./sources/arxiv";
 import { searchRxiv } from "./sources/biorxiv";
 import { getCrossrefWork, searchCrossref } from "./sources/crossref";
+import { getOpenAlexRelations, getOpenAlexWork, searchOpenAlex } from "./sources/openalex";
 import { getS2Paper, getS2Relations } from "./sources/semantic";
 import type { Env } from "./types";
 
@@ -42,12 +43,14 @@ async function run(fn: () => Promise<unknown>) {
 }
 
 export function createServer(env: Env): McpServer {
+  const SOURCES = activeSources(env);
+  const DEFAULT_SOURCES = defaultSources(env);
   const server = new McpServer(
     { name: "paper-search-mcp-server", version: VERSION },
     {
       jsonSchemaValidator: new CfWorkerJsonSchemaValidator(),
       instructions:
-        "Search academic papers across 18 free sources (no API keys). Start with search_papers for broad discovery, " +
+        `Search academic papers across ${SOURCES.length} sources. Start with search_papers for broad discovery, ` +
         "use search_<source> for source-specific syntax, get_paper_details / get_citing_papers for citation graphs, " +
         "find_open_access_pdf to locate a legal PDF, and read_paper to extract full text (paginate with offset).",
     },
@@ -87,7 +90,7 @@ export function createServer(env: Env): McpServer {
 
   // One search_<id> tool per generic source. arXiv, Crossref and bio/medRxiv get richer tools below.
   for (const src of SOURCES) {
-    if (["arxiv", "crossref", "biorxiv", "medrxiv"].includes(src.id)) continue;
+    if (["arxiv", "crossref", "biorxiv", "medrxiv", "openalex"].includes(src.id)) continue;
     server.registerTool(
       `search_${src.id}`,
       {
@@ -172,6 +175,47 @@ export function createServer(env: Env): McpServer {
         annotations: READ_ONLY,
       },
       async ({ query, max_results, days }) => run(() => searchRxiv(server_, query, max_results, days)),
+    );
+  }
+
+  if (env.OPENALEX_API_KEY) {
+    server.registerTool(
+      "search_openalex",
+      {
+        title: "Search OpenAlex",
+        description: SOURCE_MAP.get("openalex")!.description + " Supports OpenAlex filters and sorting.",
+        inputSchema: {
+          query: z.string().min(1),
+          max_results: maxResults(10, 100),
+          year: yearArg,
+          filter: z.string().optional().describe("OpenAlex filter, e.g. is_oa:true,type:article,authorships.institutions.country_code:sa"),
+          sort: z.enum(["relevance_score:desc", "cited_by_count:desc", "publication_date:desc"]).optional(),
+        },
+        annotations: READ_ONLY,
+      },
+      async ({ query, max_results, ...rest }) => run(() => searchOpenAlex(query, { maxResults: max_results, ...rest }, env)),
+    );
+
+    const oaId = z.string().min(1).describe("OpenAlex work id (W2741809807), DOI, or openalex.org / doi.org URL.");
+
+    server.registerTool(
+      "get_openalex_work",
+      { title: "Get OpenAlex work", description: "Full OpenAlex record for one work.", inputSchema: { id: oaId }, annotations: READ_ONLY },
+      async ({ id }) => run(() => getOpenAlexWork(id, env)),
+    );
+
+    server.registerTool(
+      "get_openalex_citations",
+      {
+        title: "OpenAlex citation graph",
+        description:
+          "Works that cite the given work (direction=citing) or works it references (direction=references), most-cited first. " +
+          "Good fallback when Semantic Scholar is rate-limited.",
+        inputSchema: { id: oaId, direction: z.enum(["citing", "references"]).default("citing"), max_results: maxResults(20, 100) },
+        annotations: READ_ONLY,
+      },
+      async ({ id, direction, max_results }) =>
+        run(() => getOpenAlexRelations(id, direction === "citing" ? "cites" : "cited_by", max_results, env)),
     );
   }
 

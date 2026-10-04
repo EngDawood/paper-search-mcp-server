@@ -5,6 +5,8 @@ export interface Env {
   NCBI_API_KEY?: string;
   /** Optional Semantic Scholar key: dedicated rate limit instead of the shared pool. */
   SEMANTIC_SCHOLAR_API_KEY?: string;
+  /** OpenAlex API key (free). Enables the OpenAlex source and tools. */
+  OPENALEX_API_KEY?: string;
   /** Optional bearer token. When set, /mcp requires `Authorization: Bearer <token>`. */
   MCP_AUTH_TOKEN?: string;
 }
