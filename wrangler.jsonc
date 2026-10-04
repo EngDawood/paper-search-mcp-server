@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "paper-search-mcp-server",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // PDF text extraction (read_paper) is CPU-heavy; this needs the Workers Paid plan.
+  // Remove "limits" if you deploy on the Free plan (searches still work, read_paper may hit the 10 ms CPU cap).
+  "limits": { "cpu_ms": 60000 },
+  "vars": {
+    // Optional. Enables Unpaywall and puts you in Crossref's / NCBI's polite pool.
+    "CONTACT_EMAIL": ""
+  }
+  // Optional secrets (wrangler secret put <NAME>):
+  //   MCP_AUTH_TOKEN            protect /mcp with a bearer token
+  //   NCBI_API_KEY              higher PubMed/PMC rate limits
+  //   SEMANTIC_SCHOLAR_API_KEY  dedicated Semantic Scholar rate limit
+}
