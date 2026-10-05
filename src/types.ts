@@ -15,8 +15,12 @@ export interface Env {
   SPRINGER_API_KEY?: string;
   /** NASA ADS API token (free). Enables the ADS source. */
   ADS_API_KEY?: string;
-  /** Optional bearer token. When set, /mcp requires `Authorization: Bearer <token>`. */
+  /** Optional token. When set, token holders get full access and everyone else gets the anonymous tier. */
   MCP_AUTH_TOKEN?: string;
+  /** Rate limiter for anonymous /mcp requests (per IP). Binding in wrangler.jsonc `ratelimits`. */
+  ANON_LIMITER?: RateLimit;
+  /** Usage log (one row per tool call). Binding in wrangler.jsonc `analytics_engine_datasets`. */
+  USAGE?: AnalyticsEngineDataset;
 }
 
 export interface Paper {

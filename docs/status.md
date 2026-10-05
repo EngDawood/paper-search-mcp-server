@@ -7,9 +7,24 @@ Last updated: 2026-10-05.
 - URL: https://paper-search-mcp.engdawood.com and https://www.paper-search-mcp.engdawood.com (custom domains in `wrangler.jsonc` `routes`).
 - `*.workers.dev` returns 404: with `routes` set, wrangler disables workers.dev unless `"workers_dev": true` is added.
 - Deploys from `main`; a push to `main` seemed to deploy automatically (Workers Builds). Not confirmed in the dashboard.
-- Auth: bearer token required on `/mcp` (`MCP_AUTH_TOKEN` set).
+- Access: token holders (`Authorization: Bearer` or `X-API-Key`) get all tools, no limit. No token: 30 req/min per IP via `ANON_LIMITER`, no `read_paper`. Wrong token: 401.
 - Edge cache is now active (it needs a custom domain).
 - Last live smoke test (2026-10-04, phase 1 + OpenAlex, old URL): 27/31 pass. Phase 2 code is merged but not live-tested (needs the token and phase 2 keys).
+
+## Usage log
+
+Dataset `paper_search_usage` (binding `USAGE`). Columns: `blob1` tool, `blob2` tier, `blob3` ok/error, `blob4` country,
+`blob5` query, `blob6` args JSON, `blob7` error, `double1` ms, `double2` results. Query with the SQL API
+(needs an API token with Account Analytics Read):
+
+```bash
+curl "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/analytics_engine/sql" \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -d "SELECT blob1 AS tool, count() AS calls, avg(double1) AS avg_ms FROM paper_search_usage
+      WHERE timestamp > NOW() - INTERVAL '7' DAY GROUP BY tool ORDER BY calls DESC"
+```
+
+Use `SUM(_sample_interval)` instead of `count()` for exact counts at high volume.
 
 ## Secrets and vars
 
@@ -22,7 +37,7 @@ Last updated: 2026-10-05.
 | `SPRINGER_API_KEY` | no | Springer Nature source (phase 2) |
 | `ADS_API_KEY` | no | NASA ADS source (phase 2) |
 | `NCBI_API_KEY` | no | Optional, higher PubMed limits |
-| `MCP_AUTH_TOKEN` | yes | Protects `/mcp` |
+| `MCP_AUTH_TOKEN` | yes | Full access for token holders; others get the anonymous tier |
 | `CONTACT_EMAIL` (var) | `dawood.engdawood.com` | Enables Unpaywall, polite pools. Value has no `@`, so Unpaywall will reject it; owner to confirm the address. |
 
 ## Open issues

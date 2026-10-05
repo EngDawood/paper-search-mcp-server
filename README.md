@@ -83,7 +83,7 @@ Optional configuration:
 CONTACT_EMAIL = "you@example.com"     # enables Unpaywall; polite pool for Crossref/NCBI
 
 # secrets
-npx wrangler secret put MCP_AUTH_TOKEN            # require Authorization: Bearer <token> on /mcp
+npx wrangler secret put MCP_AUTH_TOKEN            # full access for token holders; others: 30 req/min per IP, no read_paper
 npx wrangler secret put NCBI_API_KEY              # PubMed/PMC 3 -> 10 req/s
 npx wrangler secret put SEMANTIC_SCHOLAR_API_KEY  # free key, avoids the shared 429 pool
 npx wrangler secret put OPENALEX_API_KEY          # enables OpenAlex search and citation graph
@@ -104,6 +104,12 @@ Claude Code:
 claude mcp add --transport http paper-search https://paper-search-mcp-server.<you>.workers.dev/mcp
 # with auth: --header "Authorization: Bearer <token>"
 ```
+
+claude.ai custom connector: URL `https://<host>/mcp`, header `x-api-key` with the token as value.
+
+Without a token (when `MCP_AUTH_TOKEN` is set) the server still works, limited to 30 requests per minute per IP and without `read_paper`.
+
+Every tool call is logged to Workers Analytics Engine (tool, query, status, timing, country; no IPs or tokens). See `docs/status.md` for how to query it.
 
 Claude Desktop / others (via `mcp-remote`):
 
