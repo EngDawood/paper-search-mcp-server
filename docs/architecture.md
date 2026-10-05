@@ -18,6 +18,7 @@ client --POST /mcp--> src/index.ts (CORS, token check, anonymous rate limit)
 | Path | Role |
 |---|---|
 | `src/index.ts` | Worker entry: routing, CORS, `MCP_AUTH_TOKEN` check, `ANON_LIMITER` for anonymous requests |
+| `src/lib/usage.ts` | Usage log: one Analytics Engine row per tool call (`USAGE` binding). `createServer` wraps `registerTool` so every tool is logged |
 | `src/server.ts` | `createServer(env)`: registers all tools with zod schemas |
 | `src/types.ts` | `Env`, `Paper`, `Source`, `paper()` helper |
 | `src/sources/index.ts` | `SOURCES` (free), `KEYED_SOURCES`, `activeSources(env)`, `defaultSources(env)` |

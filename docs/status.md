@@ -11,6 +11,21 @@ Last updated: 2026-10-05.
 - Edge cache is now active (it needs a custom domain).
 - Last live smoke test (2026-10-04, phase 1 + OpenAlex, old URL): 27/31 pass. Phase 2 code is merged but not live-tested (needs the token and phase 2 keys).
 
+## Usage log
+
+Dataset `paper_search_usage` (binding `USAGE`). Columns: `blob1` tool, `blob2` tier, `blob3` ok/error, `blob4` country,
+`blob5` query, `blob6` args JSON, `blob7` error, `double1` ms, `double2` results. Query with the SQL API
+(needs an API token with Account Analytics Read):
+
+```bash
+curl "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/analytics_engine/sql" \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -d "SELECT blob1 AS tool, count() AS calls, avg(double1) AS avg_ms FROM paper_search_usage
+      WHERE timestamp > NOW() - INTERVAL '7' DAY GROUP BY tool ORDER BY calls DESC"
+```
+
+Use `SUM(_sample_interval)` instead of `count()` for exact counts at high volume.
+
 ## Secrets and vars
 
 | Name | Set | Effect |

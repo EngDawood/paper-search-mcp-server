@@ -127,3 +127,24 @@ describe("auth token", async () => {
     expect(access(req({ "x-api-key": "bad" }), { MCP_AUTH_TOKEN: "t" })).toBe("denied");
   });
 });
+
+describe("usage log", async () => {
+  const { countResults, logCall } = await import("../src/lib/usage");
+  it("counts results", () => {
+    expect(countResults("[1,2,3]")).toBe(3);
+    expect(countResults('{"total":180764,"papers":[1]}')).toBe(1);
+    expect(countResults('{"total":7}')).toBe(7);
+    expect(countResults('{"papers":[1,2]}')).toBe(2);
+    expect(countResults("plain text")).toBe(0);
+  });
+  it("writes one row with query and no secrets", () => {
+    const rows: AnalyticsEngineDataPoint[] = [];
+    const env = { USAGE: { writeDataPoint: (p?: AnalyticsEngineDataPoint) => rows.push(p!) }, MCP_AUTH_TOKEN: "secret" };
+    logCall(env, { tool: "search_arxiv", tier: "anonymous", country: "YE", args: { query: "llm" }, ok: true, error: "", results: 2, ms: 120 });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].indexes).toEqual(["search_arxiv"]);
+    expect(rows[0].blobs?.slice(0, 5)).toEqual(["search_arxiv", "anonymous", "ok", "YE", "llm"]);
+    expect(rows[0].doubles).toEqual([120, 2]);
+    expect(JSON.stringify(rows)).not.toContain("secret");
+  });
+});

@@ -43,9 +43,10 @@ export function access(req: Request, env: Env): Access {
 }
 
 async function handleMcp(req: Request, env: Env, anonymous: boolean): Promise<Response> {
+  const country = (req.cf?.country as string | undefined) ?? "";
   // Stateless mode: a fresh server + transport per request. No Durable Objects needed.
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  const server = createServer(env, { anonymous });
+  const server = createServer(env, { anonymous, country });
   await server.connect(transport);
   return transport.handleRequest(req);
 }

@@ -21,6 +21,9 @@
   "ratelimits": [
     { "name": "ANON_LIMITER", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }
   ],
+  // Usage log: one row per tool call (tool, tier, status, country, query, args, error, ms, results).
+  // No IPs or tokens. Query with the Analytics Engine SQL API (see docs/status.md).
+  "analytics_engine_datasets": [{ "binding": "USAGE", "dataset": "paper_search_usage" }],
   // PDF text extraction (read_paper) is CPU-heavy; this needs the Workers Paid plan.
   // Remove "limits" if you deploy on the Free plan (searches still work, read_paper may hit the 10 ms CPU cap).
   "limits": { "cpu_ms": 60000 },

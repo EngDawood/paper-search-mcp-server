@@ -19,6 +19,8 @@ export interface Env {
   MCP_AUTH_TOKEN?: string;
   /** Rate limiter for anonymous /mcp requests (per IP). Binding in wrangler.jsonc `ratelimits`. */
   ANON_LIMITER?: RateLimit;
+  /** Usage log (one row per tool call). Binding in wrangler.jsonc `analytics_engine_datasets`. */
+  USAGE?: AnalyticsEngineDataset;
 }
 
 export interface Paper {
