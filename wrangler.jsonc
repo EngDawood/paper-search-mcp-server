@@ -4,6 +4,17 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
+	"routes": [
+		{
+			"pattern": "paper-search-mcp.engdawood.com",
+			"custom_domain": true
+		},
+		{
+			"pattern": "www.paper-search-mcp.engdawood.com", 
+			"custom_domain": true
+		}
+	],
+
   "observability": { "enabled": true },
   // PDF text extraction (read_paper) is CPU-heavy; this needs the Workers Paid plan.
   // Remove "limits" if you deploy on the Free plan (searches still work, read_paper may hit the 10 ms CPU cap).
@@ -17,7 +28,7 @@
   },
   "vars": {
     // Optional. Enables Unpaywall and puts you in Crossref's / NCBI's polite pool.
-    "CONTACT_EMAIL": ""
+    "CONTACT_EMAIL": "dawood.engdawood.com"
   }
   // Other optional secrets (wrangler secret put <NAME>):
   //   MCP_AUTH_TOKEN            protect /mcp with a bearer token
