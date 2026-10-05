@@ -38,4 +38,6 @@ Short log of choices and the reason for each. Add new entries at the bottom.
 
 18. **Custom domains instead of workers.dev** (owner's change). `routes` with `custom_domain: true` for `paper-search-mcp.engdawood.com` and `www.`. This turns workers.dev off and makes the edge cache work. Add `"workers_dev": true` only if the old URL is needed again.
 
-19. **`/mcp` is protected with `MCP_AUTH_TOKEN`** (owner's change). `/` and `/health` stay public. Clients send `Authorization: Bearer <token>`; the smoke script takes the token as its second argument.
+19. **`/mcp` is protected with `MCP_AUTH_TOKEN`** (owner's change). `/` and `/health` stay public. Clients send `Authorization: Bearer <token>` or `X-API-Key: <token>` (claude.ai connectors only offer fixed header names, not Bearer); `?token=` also works; the smoke script takes the token as its second argument.
+
+20. **Anonymous tier instead of a closed `/mcp`** (owner's choice). No token: allowed, 30 req/min per IP (Workers Rate Limiting binding `ANON_LIMITER`, approximate and per location), and `read_paper` is hidden because PDF parsing is CPU-heavy. Wrong token: 401, never a fallback. claude.ai connector traffic comes from shared Anthropic IPs, so anonymous claude.ai users share one limit; they should use the `x-api-key` header.
