@@ -110,3 +110,16 @@ describe("OpenAlex", async () => {
     expect(openalexId("PMID:12345")).toBe("pmid:12345");
   });
 });
+
+describe("Semantic Scholar gating", async () => {
+  const { activeSources, defaultSources } = await import("../src/sources");
+  it("hides semantic without a key", () => {
+    expect(activeSources({}).map((s) => s.id)).not.toContain("semantic");
+    expect(defaultSources({})).not.toContain("semantic");
+  });
+  it("enables semantic with a key", () => {
+    const env = { SEMANTIC_SCHOLAR_API_KEY: "k" };
+    expect(activeSources(env).map((s) => s.id)).toContain("semantic");
+    expect(defaultSources(env)).toContain("semantic");
+  });
+});

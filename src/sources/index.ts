@@ -30,7 +30,6 @@ export const SOURCES: Source[] = [
   biorxiv,
   medrxiv,
   crossref,
-  semantic,
   dblp,
   openreview,
   hal,
@@ -48,6 +47,8 @@ export const SOURCES: Source[] = [
  * `inDefaults` adds the source to search_papers when no sources are given.
  */
 export const KEYED_SOURCES: { source: Source; enabled: (env: Env) => boolean; inDefaults: boolean }[] = [
+  // Works without a key in theory, but the shared pool is almost always 429. Hidden until a key is set.
+  { source: semantic, enabled: (env) => !!env.SEMANTIC_SCHOLAR_API_KEY, inDefaults: true },
   { source: openalex, enabled: (env) => !!env.OPENALEX_API_KEY, inDefaults: true },
   { source: core, enabled: (env) => !!env.CORE_API_KEY, inDefaults: true },
   { source: ieee, enabled: (env) => !!env.IEEE_API_KEY, inDefaults: false },
@@ -62,7 +63,7 @@ export function activeSources(env: Env): Source[] {
 export const SOURCE_MAP = new Map([...SOURCES, ...KEYED_SOURCES.map((k) => k.source)].map((s) => [s.id, s]));
 
 /** Fast, broad sources used by search_papers when no sources are given. */
-const BASE_DEFAULTS = ["arxiv", "pubmed", "crossref", "semantic", "europepmc", "openreview"];
+const BASE_DEFAULTS = ["arxiv", "pubmed", "crossref", "europepmc", "openreview"];
 
 export function defaultSources(env: Env): string[] {
   return [...BASE_DEFAULTS, ...KEYED_SOURCES.filter((k) => k.inDefaults && k.enabled(env)).map((k) => k.source.id)];

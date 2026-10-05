@@ -53,15 +53,11 @@ export interface OaResult {
   errors: Record<string, string>;
 }
 
-/** Find an open-access PDF for a DOI: Unpaywall (if CONTACT_EMAIL set), Semantic Scholar, Europe PMC, arXiv. */
+/** Find an open-access PDF for a DOI: Unpaywall (if CONTACT_EMAIL set), Semantic Scholar (if keyed), Europe PMC, arXiv. */
 export async function findOpenAccessPdf(doiInput: string, env: Env): Promise<OaResult> {
   const doi = extractDoi(doiInput) || doiInput.trim();
   const out: OaResult = { doi, pdf_url: "", candidates: [], errors: {} };
   const tasks: Record<string, () => Promise<void>> = {
-    semantic: async () => {
-      const p = await getS2Paper(`DOI:${doi}`, env);
-      if (p.pdf_url) out.candidates.push({ via: "semantic", pdf_url: p.pdf_url, landing_url: p.url });
-    },
     europepmc: async () => {
       const d = await getJson(
         `https://www.ebi.ac.uk/europepmc/webservices/rest/search?${qs({ query: `DOI:"${doi}"`, format: "json", resultType: "lite" })}`,
@@ -71,6 +67,13 @@ export async function findOpenAccessPdf(doiInput: string, env: Env): Promise<OaR
         out.candidates.push({ via: "europepmc", pdf_url: `https://europepmc.org/articles/${r.pmcid}?pdf=render`, landing_url: `https://europepmc.org/article/PMC/${r.pmcid}` });
     },
   };
+  // Semantic Scholar only with a key; the shared pool is almost always 429.
+  if (env.SEMANTIC_SCHOLAR_API_KEY) {
+    tasks.semantic = async () => {
+      const p = await getS2Paper(`DOI:${doi}`, env);
+      if (p.pdf_url) out.candidates.push({ via: "semantic", pdf_url: p.pdf_url, landing_url: p.url });
+    };
+  }
   if (env.CONTACT_EMAIL) {
     tasks.unpaywall = async () => {
       const u = await unpaywallLookup(doi, env);
