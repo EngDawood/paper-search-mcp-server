@@ -7,7 +7,7 @@ Last updated: 2026-10-05.
 - URL: https://paper-search-mcp.engdawood.com and https://www.paper-search-mcp.engdawood.com (custom domains in `wrangler.jsonc` `routes`).
 - `*.workers.dev` returns 404: with `routes` set, wrangler disables workers.dev unless `"workers_dev": true` is added.
 - Deploys from `main`; a push to `main` seemed to deploy automatically (Workers Builds). Not confirmed in the dashboard.
-- Access: token holders (`Authorization: Bearer` or `X-API-Key`) get all tools, no limit. No token: 30 req/min per IP via `ANON_LIMITER`, no `read_paper`. Wrong token: 401.
+- Auth: bearer token required on `/mcp` (`MCP_AUTH_TOKEN` set).
 - Edge cache is now active (it needs a custom domain).
 - Last live smoke test (2026-10-04, phase 1 + OpenAlex, old URL): 27/31 pass. Phase 2 code is merged but not live-tested (needs the token and phase 2 keys).
 
@@ -22,7 +22,7 @@ Last updated: 2026-10-05.
 | `SPRINGER_API_KEY` | no | Springer Nature source (phase 2) |
 | `ADS_API_KEY` | no | NASA ADS source (phase 2) |
 | `NCBI_API_KEY` | no | Optional, higher PubMed limits |
-| `MCP_AUTH_TOKEN` | yes | Full access for token holders; others get the anonymous tier |
+| `MCP_AUTH_TOKEN` | yes | Protects `/mcp` |
 | `CONTACT_EMAIL` (var) | `dawood.engdawood.com` | Enables Unpaywall, polite pools. Value has no `@`, so Unpaywall will reject it; owner to confirm the address. |
 
 ## Open issues

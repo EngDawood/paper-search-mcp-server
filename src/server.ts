@@ -43,8 +43,7 @@ async function run(fn: () => Promise<unknown>) {
   }
 }
 
-/** `anonymous`: request had no token while MCP_AUTH_TOKEN is set. Hides token-only tools. */
-export function createServer(env: Env, { anonymous = false }: { anonymous?: boolean } = {}): McpServer {
+export function createServer(env: Env): McpServer {
   /**
    * Semantic Scholar without a key is often rate-limited. When OpenAlex is configured and the
    * id is one OpenAlex understands (DOI or W-id), retry there. Results then carry source "openalex".
@@ -72,8 +71,7 @@ export function createServer(env: Env, { anonymous = false }: { anonymous?: bool
       instructions:
         `Search academic papers across ${SOURCES.length} sources. Start with search_papers for broad discovery, ` +
         "use search_<source> for source-specific syntax, get_paper_details / get_citing_papers for citation graphs, " +
-        "find_open_access_pdf to locate a legal PDF" +
-        (anonymous ? "." : ", and read_paper to extract full text (paginate with offset)."),
+        "find_open_access_pdf to locate a legal PDF, and read_paper to extract full text (paginate with offset).",
     },
   );
 
@@ -337,8 +335,7 @@ export function createServer(env: Env, { anonymous = false }: { anonymous?: bool
     async ({ doi }) => run(() => findOpenAccessPdf(doi, env)),
   );
 
-  // PDF parsing is CPU-heavy, so read_paper is for token holders only.
-  if (!anonymous) server.registerTool(
+  server.registerTool(
     "read_paper",
     {
       title: "Read paper full text",

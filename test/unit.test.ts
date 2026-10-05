@@ -110,20 +110,3 @@ describe("OpenAlex", async () => {
     expect(openalexId("PMID:12345")).toBe("pmid:12345");
   });
 });
-
-describe("auth token", async () => {
-  const { requestToken, access } = await import("../src/index");
-  const req = (headers: Record<string, string>, q = "") => new Request(`https://x/mcp${q}`, { headers });
-  it("reads Bearer, X-API-Key and ?token", () => {
-    expect(requestToken(req({ Authorization: "Bearer a" }))).toBe("a");
-    expect(requestToken(req({ "x-api-key": "b" }))).toBe("b");
-    expect(requestToken(req({}, "?token=c"))).toBe("c");
-    expect(requestToken(req({}))).toBe("");
-  });
-  it("maps tokens to access levels", () => {
-    expect(access(req({}), {})).toBe("full");
-    expect(access(req({}), { MCP_AUTH_TOKEN: "t" })).toBe("anonymous");
-    expect(access(req({ "x-api-key": "t" }), { MCP_AUTH_TOKEN: "t" })).toBe("full");
-    expect(access(req({ "x-api-key": "bad" }), { MCP_AUTH_TOKEN: "t" })).toBe("denied");
-  });
-});
