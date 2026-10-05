@@ -34,6 +34,7 @@ Run `npm run typecheck && npm test` before every commit.
 
 ## Git
 
-- Default working branch is `main`; the owner asked for changes to go to `main` directly.
+- Default branch is `main`. Small changes go to `main` directly; the owner asked for phase work on its own branch (e.g. `claude/phase-2-keyed-sources`).
+- `wrangler dev` only loads secrets listed in `secrets.required` from `.dev.vars` (see docs/decisions.md #14).
 - Pushing to `main` appears to trigger an automatic Cloudflare deploy (Workers Builds). Verify with `curl https://paper-search-mcp-server.engdawood.workers.dev/`.
 - Commit trailers: `Co-Authored-By` and `Claude-Session` lines as provided by the session.

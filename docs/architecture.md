@@ -29,6 +29,7 @@ client --POST /mcp--> src/index.ts (CORS, optional bearer auth)
 | `src/lib/fulltext.ts` | Europe PMC `fullTextXML` (JATS) to plain text |
 | `src/lib/text.ts`, `src/lib/xml.ts` | Entity decoding, tag stripping, DOI and year parsing; fast-xml-parser wrapper |
 | `test/unit.test.ts` | Offline tests for parsers and helpers |
+| `test/keyed.test.ts` | Keyed adapters against mocked `fetch` responses |
 | `scripts/smoke.mjs` | Live test of every tool against a running server |
 
 ## Paper shape
@@ -46,10 +47,11 @@ plus optional `categories, keywords, citations, venue, extra`. Build it with `pa
 
 ## Adding a keyed source
 
-Same as above, but add it to `KEYED_SOURCES` with `enabled: (env) => !!env.<KEY>`, add the key to `Env` in
+Same as above, but add it to `KEYED_SOURCES` with `enabled: (env) => !!env.<KEY>` and `inDefaults`, add the key to `Env` in
 `src/types.ts`, register any extra tools inside `if (env.<KEY>)` in `server.ts`, and list the key in
 `wrangler.jsonc` (`secrets.required` if it should always be set, otherwise the comment block). Send keys in
-headers, not query strings, so they stay out of cache keys and logs.
+headers, not query strings, so they stay out of cache keys and logs. If the API only takes the key in the URL,
+pass `cacheTtl: 0`. Add a mocked-fetch test in `test/keyed.test.ts`. To try it in `wrangler dev`, see decision 14.
 
 ## Runtime limits to keep in mind
 

@@ -9,7 +9,9 @@
   // Remove "limits" if you deploy on the Free plan (searches still work, read_paper may hit the 10 ms CPU cap).
   "limits": { "cpu_ms": 60000 },
   // Secrets this Worker expects. Values are never stored here; set them with
-  // `wrangler secret put <NAME>` (or the dashboard). Missing ones trigger a warning in `wrangler dev`.
+  // `wrangler secret put <NAME>` (or the dashboard). Deploy fails if a listed secret is not set.
+  // Note: once this list exists, `wrangler dev` loads ONLY these names from .dev.vars. To test an
+  // optional key locally, add it here temporarily (or run with a copied config via `-c`).
   "secrets": {
     "required": ["OPENALEX_API_KEY"]
   },
@@ -21,4 +23,8 @@
   //   MCP_AUTH_TOKEN            protect /mcp with a bearer token
   //   NCBI_API_KEY              higher PubMed/PMC rate limits
   //   SEMANTIC_SCHOLAR_API_KEY  dedicated Semantic Scholar rate limit
+  //   CORE_API_KEY              enables CORE (core.ac.uk/services/api)
+  //   IEEE_API_KEY              enables IEEE Xplore (developer.ieee.org)
+  //   SPRINGER_API_KEY          enables Springer Nature (dev.springernature.com)
+  //   ADS_API_KEY               enables NASA ADS (ui.adsabs.harvard.edu, Settings > API Token)
 }

@@ -38,10 +38,17 @@ export function openalexToPaper(w: any): Paper {
   });
 }
 
-/** Accepts an OpenAlex id (W123), DOI, or openalex.org / doi.org URL. */
+/**
+ * Accepts an OpenAlex id (W123), DOI, arXiv id, PMID, or openalex.org / doi.org URL,
+ * with or without the Semantic Scholar style prefixes (DOI:, ARXIV:, PMID:).
+ */
 export function openalexId(id: string): string {
   const t = id.trim().replace("https://openalex.org/", "");
   if (/^W\d+$/i.test(t)) return t.toUpperCase();
+  const pmid = /^PMID:\s*(\d+)$/i.exec(t)?.[1];
+  if (pmid) return `pmid:${pmid}`;
+  const arxiv = /^(?:arxiv:)?(\d{4}\.\d{4,5})(?:v\d+)?$/i.exec(t)?.[1];
+  if (arxiv) return `doi:10.48550/arxiv.${arxiv}`;
   const doi = extractDoi(t);
   if (doi) return `doi:${doi}`;
   return t;

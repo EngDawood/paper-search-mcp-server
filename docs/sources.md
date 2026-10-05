@@ -28,7 +28,11 @@ Live status is from the smoke test against the deployed Worker on 2026-10-04.
 
 | id | Secret | Endpoint | Notes | Live |
 |---|---|---|---|---|
-| openalex | `OPENALEX_API_KEY` | `api.openalex.org/works` | Without a key the shared IP budget is exhausted (429). Key sent as `Authorization: Bearer`. Abstracts come as an inverted index. Adds `search_openalex`, `get_openalex_work`, `get_openalex_citations`. | pass |
+| openalex | `OPENALEX_API_KEY` | `api.openalex.org/works` | Without a key the shared IP budget is exhausted (429). Key sent as `Authorization: Bearer`. Abstracts come as an inverted index. Adds `search_openalex`, `get_openalex_work`, `get_openalex_citations`. Fallback for S2 citation tools; `openalexId` maps arXiv ids to `10.48550/arxiv.*` DOIs. | pass |
+| core | `CORE_API_KEY` | `api.core.ac.uk/v3/search/works/` | Trailing slash required (no slash gives a 301 via a Cloudflare page). Without a key: 429. Bearer header. In defaults. | untested (no key) |
+| ieee | `IEEE_API_KEY` | `ieeexploreapi.ieee.org/api/v1/search/articles` | Key must be in the query string (`apikey`), so edge cache is off (`cacheTtl: 0`). Bad key returns 403 "Developer Inactive". PDF link only for `OPEN_ACCESS`. | untested (no key) |
+| springer | `SPRINGER_API_KEY` | `api.springernature.com/meta/v2/json` | Key in query string (`api_key`), cache off. `p` is page size (max 50). Abstract may be a string or an object. Creators are "Last, First". | untested (no key) |
+| ads | `ADS_API_KEY` | `api.adsabs.harvard.edu/v1/search/query` | Bearer header. `year:A-B` filter. `pubdate` uses `-00` for unknown parts. PDF prefers arXiv. | untested (no key) |
 
 ## Lookup only
 
@@ -39,7 +43,6 @@ Live status is from the smoke test against the deployed Worker on 2026-10-04.
 ## Rejected or deferred
 
 - Google Scholar, Sci-Hub: excluded on purpose.
-- CORE, IEEE Xplore, Springer Nature, NASA ADS: need free keys; phase 2.
 - Scopus, Web of Science, ScienceDirect: paid or institutional; phase 3.
 - ChemRxiv public API: 403 from datacenter IPs.
 - CiteSeerX, SSRN: unreliable or scraping-only.
