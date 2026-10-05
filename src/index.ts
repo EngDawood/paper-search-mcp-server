@@ -32,15 +32,20 @@ export function requestToken(req: Request): string {
   return req.headers.get("X-API-Key") ?? new URL(req.url).searchParams.get("token") ?? "";
 }
 
-function authorized(req: Request, env: Env): boolean {
-  if (!env.MCP_AUTH_TOKEN) return true;
-  return timingSafeEqual(requestToken(req), env.MCP_AUTH_TOKEN);
+type Access = "full" | "anonymous" | "denied";
+
+// No MCP_AUTH_TOKEN: open server. Valid token: full. No token: anonymous tier. Wrong token: denied.
+export function access(req: Request, env: Env): Access {
+  if (!env.MCP_AUTH_TOKEN) return "full";
+  const token = requestToken(req);
+  if (!token) return "anonymous";
+  return timingSafeEqual(token, env.MCP_AUTH_TOKEN) ? "full" : "denied";
 }
 
-async function handleMcp(req: Request, env: Env): Promise<Response> {
+async function handleMcp(req: Request, env: Env, anonymous: boolean): Promise<Response> {
   // Stateless mode: a fresh server + transport per request. No Durable Objects needed.
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  const server = createServer(env);
+  const server = createServer(env, { anonymous });
   await server.connect(transport);
   return transport.handleRequest(req);
 }
@@ -51,13 +56,26 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
     if (url.pathname === "/mcp") {
-      if (!authorized(req, env)) return withCors(Response.json({ error: "unauthorized" }, { status: 401 }));
+      const level = access(req, env);
+      if (level === "denied") return withCors(Response.json({ error: "unauthorized" }, { status: 401 }));
+      if (level === "anonymous" && env.ANON_LIMITER) {
+        const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
+        const { success } = await env.ANON_LIMITER.limit({ key: ip });
+        if (!success) {
+          return withCors(
+            Response.json(
+              { error: "rate_limited", message: "Anonymous limit reached. Wait a minute or use a token." },
+              { status: 429, headers: { "Retry-After": "60" } },
+            ),
+          );
+        }
+      }
       if (req.method === "GET") {
         // No server-initiated stream in stateless mode.
         return withCors(new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } }));
       }
       try {
-        return withCors(await handleMcp(req, env));
+        return withCors(await handleMcp(req, env, level === "anonymous"));
       } catch (err) {
         console.error("mcp error", err);
         return withCors(
@@ -67,7 +85,7 @@ export default {
     }
 
     // No OAuth here. Answer discovery probes with a clean JSON 404 (with CORS) so clients
-    // fall back to header auth instead of failing on a plain-text 404.
+    // fall back to header auth or anonymous access instead of failing on a plain-text 404.
     if (url.pathname.startsWith("/.well-known/")) {
       return withCors(Response.json({ error: "not_found", auth: "Use Authorization: Bearer or X-API-Key" }, { status: 404 }));
     }
@@ -80,7 +98,9 @@ export default {
         version: VERSION,
         mcp_endpoint: `${url.origin}/mcp`,
         transport: "streamable-http (stateless, JSON responses)",
-        auth: env.MCP_AUTH_TOKEN ? "token required (Authorization: Bearer or X-API-Key)" : "none",
+        auth: env.MCP_AUTH_TOKEN
+          ? "optional: without a token, rate-limited and no read_paper; with a token (Authorization: Bearer or X-API-Key), full access"
+          : "none",
         sources: activeSources(env).map((s) => ({ id: s.id, name: s.name })),
       });
     }

@@ -3,7 +3,7 @@
 ## Request flow
 
 ```
-client --POST /mcp--> src/index.ts (CORS, optional bearer auth)
+client --POST /mcp--> src/index.ts (CORS, token check, anonymous rate limit)
                         -> new McpServer + WebStandardStreamableHTTPServerTransport per request (stateless, JSON)
                         -> src/server.ts tool handler
                         -> src/sources/<source>.ts -> src/lib/http.ts (Cache API, timeout, retry) -> upstream API
@@ -17,7 +17,7 @@ client --POST /mcp--> src/index.ts (CORS, optional bearer auth)
 
 | Path | Role |
 |---|---|
-| `src/index.ts` | Worker entry: routing, CORS, `MCP_AUTH_TOKEN` check |
+| `src/index.ts` | Worker entry: routing, CORS, `MCP_AUTH_TOKEN` check, `ANON_LIMITER` for anonymous requests |
 | `src/server.ts` | `createServer(env)`: registers all tools with zod schemas |
 | `src/types.ts` | `Env`, `Paper`, `Source`, `paper()` helper |
 | `src/sources/index.ts` | `SOURCES` (free), `KEYED_SOURCES`, `activeSources(env)`, `defaultSources(env)` |
