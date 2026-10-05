@@ -16,7 +16,7 @@ Last updated: 2026-10-05.
 | Name | Set | Effect |
 |---|---|---|
 | `OPENALEX_API_KEY` | yes | OpenAlex source and 3 tools |
-| `SEMANTIC_SCHOLAR_API_KEY` | no | Semantic Scholar tools hit 429 without it (citation tools now fall back to OpenAlex) |
+| `SEMANTIC_SCHOLAR_API_KEY` | no | Enables `search_semantic` and S2 lookups. Without it they are hidden and citation tools use OpenAlex |
 | `CORE_API_KEY` | no | CORE source (phase 2) |
 | `IEEE_API_KEY` | no | IEEE Xplore source (phase 2) |
 | `SPRINGER_API_KEY` | no | Springer Nature source (phase 2) |
@@ -27,7 +27,7 @@ Last updated: 2026-10-05.
 
 ## Open issues
 
-- Semantic Scholar 429 without a key (owner action: add key).
+- Semantic Scholar hidden until a key is added (owner action: add key).
 - DBLP and IACR blocked from Cloudflare egress IPs. No code fix; possible workaround is a proxy, not planned.
 - `CONTACT_EMAIL` looks malformed (see above).
 - `read_paper` cannot fetch PDFs behind bot challenges (IACR, bioRxiv, many publishers).

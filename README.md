@@ -18,7 +18,6 @@ Phase 1 covers **18 sources that need no API key**.
 | `biorxiv` | bioRxiv | Biology preprints (recent-window keyword match or DOI) |
 | `medrxiv` | medRxiv | Health-science preprints (same strategy) |
 | `crossref` | Crossref | DOI metadata, all disciplines |
-| `semantic` | Semantic Scholar | 200M+ papers, citations, OA PDFs |
 | `dblp` | DBLP | Computer science bibliography |
 | `openreview` | OpenReview | ML conference papers (ICLR, NeurIPS, ...) |
 | `hal` | HAL | French open archive, multidisciplinary |
@@ -34,27 +33,32 @@ Phase 1 covers **18 sources that need no API key**.
 
 | id | Source | Secret | Adds tools |
 |---|---|---|---|
+| `semantic` | Semantic Scholar (200M+ papers, citations, OA PDFs) | `SEMANTIC_SCHOLAR_API_KEY` (free at semanticscholar.org/product/api) | `search_semantic`; joins `search_papers` defaults; primary for the citation tools; extra `find_open_access_pdf` lookup |
 | `openalex` | OpenAlex (250M+ works, all disciplines) | `OPENALEX_API_KEY` (free at openalex.org) | `search_openalex`, `get_openalex_work`, `get_openalex_citations`; joins `search_papers` defaults; fallback for the citation tools |
 | `core` | CORE (300M+ open-access papers) | `CORE_API_KEY` (free at core.ac.uk/services/api) | `search_core`; joins `search_papers` defaults |
 | `ieee` | IEEE Xplore | `IEEE_API_KEY` (free at developer.ieee.org) | `search_ieee` |
 | `springer` | Springer Nature (Springer, Nature, BMC) | `SPRINGER_API_KEY` (free at dev.springernature.com) | `search_springer` (with `open_access_only`) |
 | `ads` | NASA ADS (astronomy, astrophysics, physics) | `ADS_API_KEY` (free token in ADS settings) | `search_ads` |
 
-These tools only appear when the secret is set. With `OPENALEX_API_KEY` set, `get_paper_details`, `get_citing_papers`
-and `get_referenced_papers` retry on OpenAlex when Semantic Scholar fails (results then have `source: "openalex"`).
+These tools only appear when the secret is set. Semantic Scholar works without a key in theory, but the shared pool
+is almost always rate-limited, so it is hidden until the key is set.
 
-## Tools (27 without keys, up to 34 with all keys)
+`get_paper_details`, `get_citing_papers` and `get_referenced_papers` need one of the two keys: with
+`SEMANTIC_SCHOLAR_API_KEY` they use Semantic Scholar and retry on OpenAlex (results then have `source: "openalex"`);
+with only `OPENALEX_API_KEY` they use OpenAlex directly; with neither they are hidden.
+
+## Tools (23 without keys, up to 34 with all keys)
 
 | Tool | Purpose |
 |---|---|
 | `list_sources` | List source ids and coverage |
 | `search_papers` | Parallel multi-source search, de-duplicated by DOI / arXiv id / title |
-| `search_<source>` | One per source (18). `search_arxiv` supports `title`, `author`, `category`, sort and paging. `search_crossref` supports filters and sort. `search_biorxiv`/`search_medrxiv` take `days`. |
+| `search_<source>` | One per source (17 without keys). `search_arxiv` supports `title`, `author`, `category`, sort and paging. `search_crossref` supports filters and sort. `search_biorxiv`/`search_medrxiv` take `days`. |
 | `get_arxiv_papers` | Metadata for arXiv ids |
 | `get_paper_by_doi` | Crossref record for a DOI |
-| `get_paper_details` | Semantic Scholar record (DOI, arXiv id, PMID, S2 id) |
-| `get_citing_papers` / `get_referenced_papers` | Citation graph via Semantic Scholar |
-| `find_open_access_pdf` | Legal OA PDF links (Semantic Scholar, Europe PMC, arXiv, Unpaywall if `CONTACT_EMAIL` is set) |
+| `get_paper_details` | Paper record by DOI, arXiv id, PMID or S2/OpenAlex id (needs a Semantic Scholar or OpenAlex key) |
+| `get_citing_papers` / `get_referenced_papers` | Citation graph via Semantic Scholar or OpenAlex (needs either key) |
+| `find_open_access_pdf` | Legal OA PDF links (Europe PMC, arXiv, Unpaywall if `CONTACT_EMAIL` is set, Semantic Scholar if keyed) |
 | `read_paper` | Full text from `pdf_url`, `source` + `paper_id`, or a DOI. Paginate with `offset` / `max_chars`. |
 
 All search tools accept `year`: `"2023"`, `"2019-2023"`, `"2020-"` or `"-2015"`.
@@ -117,7 +121,7 @@ Claude Desktop / others (via `mcp-remote`):
 
 ## Known limits
 
-- **Semantic Scholar** without a key shares a global rate limit and often returns 429. A free key fixes this.
+- **Semantic Scholar** is hidden until `SEMANTIC_SCHOLAR_API_KEY` is set (the keyless pool is almost always 429).
 - **arXiv** asks for at most 1 request per 3 s. GET responses are cached for 1 h with the Workers Cache API. The cache only works on a custom domain; on `*.workers.dev` it does nothing. Adding custom-domain `routes` also turns `workers.dev` off unless you set `"workers_dev": true`.
 - **DBLP** sometimes serves a bot challenge (Anubis) to datacenter IPs.
 - **IACR PDFs, some publisher PDFs, and bioRxiv PDFs** can be behind Cloudflare/bot challenges, so `read_paper` cannot fetch them.

@@ -39,3 +39,5 @@ Short log of choices and the reason for each. Add new entries at the bottom.
 18. **Custom domains instead of workers.dev** (owner's change). `routes` with `custom_domain: true` for `paper-search-mcp.engdawood.com` and `www.`. This turns workers.dev off and makes the edge cache work. Add `"workers_dev": true` only if the old URL is needed again.
 
 19. **`/mcp` is protected with `MCP_AUTH_TOKEN`** (owner's change). `/` and `/health` stay public. Clients send `Authorization: Bearer <token>`; the smoke script takes the token as its second argument.
+
+22. **Semantic Scholar is a keyed source** (owner's choice). Without a key it was almost always 429, which wasted a slot in `search_papers` defaults and added ~3 s before the OpenAlex fallback. Now `search_semantic` and the S2 lookups appear only with `SEMANTIC_SCHOLAR_API_KEY`. The citation tools use OpenAlex directly when only its key is set, and are hidden when neither key is set. Numbered 22 because open PRs add #20 and #21.

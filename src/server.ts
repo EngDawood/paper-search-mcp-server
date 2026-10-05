@@ -273,62 +273,65 @@ export function createServer(env: Env): McpServer {
       }),
   );
 
-  const paperIdArg = z
-    .string()
-    .min(1)
-    .describe("Semantic Scholar id, DOI, arXiv id, or prefixed id (DOI:, ARXIV:, PMID:, CorpusId:, URL:).");
+  // Citation tools: Semantic Scholar (with OpenAlex fallback) when its key is set, OpenAlex only when
+  // just that key is set, hidden when neither is.
+  const hasS2 = !!env.SEMANTIC_SCHOLAR_API_KEY;
+  const via = hasS2 ? "via Semantic Scholar, falling back to OpenAlex when configured" : "via OpenAlex";
+  if (hasS2 || env.OPENALEX_API_KEY) {
+    const paperIdArg = z
+      .string()
+      .min(1)
+      .describe(
+        hasS2
+          ? "Semantic Scholar id, DOI, arXiv id, or prefixed id (DOI:, ARXIV:, PMID:, CorpusId:, URL:)."
+          : "DOI, arXiv id, PMID: prefixed id, or OpenAlex work id (W...).",
+      );
+    const details = (id: string) => (hasS2 ? withOpenAlexFallback(() => getS2Paper(id, env), () => getOpenAlexWork(id, env)) : getOpenAlexWork(id, env));
+    const relations = (id: string, kind: "citations" | "references", n: number) => {
+      const oa = () => getOpenAlexRelations(id, kind === "citations" ? "cites" : "cited_by", n, env);
+      return hasS2 ? withOpenAlexFallback(() => getS2Relations(id, kind, n, env), oa) : oa();
+    };
 
-  server.registerTool(
-    "get_paper_details",
-    {
-      title: "Get paper details",
-      description: "Semantic Scholar record for a paper: abstract, venue, citation/reference counts, open-access PDF. Falls back to OpenAlex when configured.",
-      inputSchema: { paper_id: paperIdArg },
-      annotations: READ_ONLY,
-    },
-    async ({ paper_id }) => run(() => withOpenAlexFallback(() => getS2Paper(paper_id, env), () => getOpenAlexWork(paper_id, env))),
-  );
+    server.registerTool(
+      "get_paper_details",
+      {
+        title: "Get paper details",
+        description: `Paper record: abstract, venue, citation/reference counts, open-access PDF, ${via}.`,
+        inputSchema: { paper_id: paperIdArg },
+        annotations: READ_ONLY,
+      },
+      async ({ paper_id }) => run(() => details(paper_id)),
+    );
 
-  server.registerTool(
-    "get_citing_papers",
-    {
-      title: "Get citing papers",
-      description: "Papers that cite the given paper (forward citations), via Semantic Scholar, falling back to OpenAlex when configured.",
-      inputSchema: { paper_id: paperIdArg, max_results: maxResults(20, 100) },
-      annotations: READ_ONLY,
-    },
-    async ({ paper_id, max_results }) =>
-      run(() =>
-        withOpenAlexFallback(
-          () => getS2Relations(paper_id, "citations", max_results, env),
-          () => getOpenAlexRelations(paper_id, "cites", max_results, env),
-        ),
-      ),
-  );
+    server.registerTool(
+      "get_citing_papers",
+      {
+        title: "Get citing papers",
+        description: `Papers that cite the given paper (forward citations), ${via}.`,
+        inputSchema: { paper_id: paperIdArg, max_results: maxResults(20, 100) },
+        annotations: READ_ONLY,
+      },
+      async ({ paper_id, max_results }) => run(() => relations(paper_id, "citations", max_results)),
+    );
 
-  server.registerTool(
-    "get_referenced_papers",
-    {
-      title: "Get referenced papers",
-      description: "Papers referenced by the given paper (its bibliography), via Semantic Scholar, falling back to OpenAlex when configured.",
-      inputSchema: { paper_id: paperIdArg, max_results: maxResults(20, 100) },
-      annotations: READ_ONLY,
-    },
-    async ({ paper_id, max_results }) =>
-      run(() =>
-        withOpenAlexFallback(
-          () => getS2Relations(paper_id, "references", max_results, env),
-          () => getOpenAlexRelations(paper_id, "cited_by", max_results, env),
-        ),
-      ),
-  );
+    server.registerTool(
+      "get_referenced_papers",
+      {
+        title: "Get referenced papers",
+        description: `Papers referenced by the given paper (its bibliography), ${via}.`,
+        inputSchema: { paper_id: paperIdArg, max_results: maxResults(20, 100) },
+        annotations: READ_ONLY,
+      },
+      async ({ paper_id, max_results }) => run(() => relations(paper_id, "references", max_results)),
+    );
+  }
 
   server.registerTool(
     "find_open_access_pdf",
     {
       title: "Find open-access PDF",
       description:
-        "Find legal open-access PDF links for a DOI using Semantic Scholar, Europe PMC, arXiv and (if CONTACT_EMAIL is configured) Unpaywall.",
+        `Find legal open-access PDF links for a DOI using ${hasS2 ? "Semantic Scholar, " : ""}Europe PMC, arXiv and (if CONTACT_EMAIL is configured) Unpaywall.`,
       inputSchema: { doi: z.string().min(1) },
       annotations: READ_ONLY,
     },
@@ -341,7 +344,7 @@ export function createServer(env: Env): McpServer {
       title: "Read paper full text",
       description:
         "Download a PDF and return its extracted text, paginated by characters. Give either pdf_url, or source + paper_id " +
-        "(arxiv, pmc, europepmc, biorxiv, medrxiv, openreview, eric, semantic, iacr*), or a DOI (an open-access copy is looked up). *Some hosts (IACR, publisher sites) serve bot challenges and cannot be read.",
+        `(arxiv, pmc, europepmc, biorxiv, medrxiv, openreview, eric, ${hasS2 ? "semantic, " : ""}iacr*), or a DOI (an open-access copy is looked up). *Some hosts (IACR, publisher sites) serve bot challenges and cannot be read.`,
       inputSchema: {
         source: z.string().optional().describe("Source id the paper_id belongs to."),
         paper_id: z.string().optional(),
