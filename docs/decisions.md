@@ -35,3 +35,7 @@ Short log of choices and the reason for each. Add new entries at the bottom.
 16. **Citation tools fall back to OpenAlex** when Semantic Scholar errors and `OPENALEX_API_KEY` is set. Output shape is unchanged; the `source` field shows which service answered.
 
 17. **Phase 2 adapters were verified with mocked responses and fake-key round trips only** (each API returned its auth error, proving the request shape and key placement). Real-key results still need a live check.
+
+18. **Custom domains instead of workers.dev** (owner's change). `routes` with `custom_domain: true` for `paper-search-mcp.engdawood.com` and `www.`. This turns workers.dev off and makes the edge cache work. Add `"workers_dev": true` only if the old URL is needed again.
+
+19. **`/mcp` is protected with `MCP_AUTH_TOKEN`** (owner's change). `/` and `/health` stay public. Clients send `Authorization: Bearer <token>`; the smoke script takes the token as its second argument.

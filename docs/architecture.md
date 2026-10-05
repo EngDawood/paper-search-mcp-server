@@ -58,4 +58,4 @@ pass `cacheTtl: 0`. Add a mocked-fetch test in `test/keyed.test.ts`. To try it i
 - Bundle must stay under 3 MB gzip (Free) / 10 MB (Paid). Currently about 870 KiB, mostly `unpdf`.
 - `limits.cpu_ms = 60000` in `wrangler.jsonc` needs the Paid plan; PDF parsing is the CPU-heavy part.
 - Subrequests per invocation: 50 on Free. `search_papers` with many sources plus bioRxiv paging can approach this.
-- The Cache API is a no-op on `*.workers.dev`; it only works on a custom domain.
+- The Cache API is a no-op on `*.workers.dev` and only works on a custom domain. The live Worker uses custom domains, so caching is active.

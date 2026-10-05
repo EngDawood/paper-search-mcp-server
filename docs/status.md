@@ -4,10 +4,12 @@ Last updated: 2026-10-05.
 
 ## Deployment
 
-- URL: https://paper-search-mcp-server.engdawood.workers.dev
+- URL: https://paper-search-mcp.engdawood.com and https://www.paper-search-mcp.engdawood.com (custom domains in `wrangler.jsonc` `routes`).
+- `*.workers.dev` returns 404: with `routes` set, wrangler disables workers.dev unless `"workers_dev": true` is added.
 - Deploys from `main`; a push to `main` seemed to deploy automatically (Workers Builds). Not confirmed in the dashboard.
-- Auth: none (`MCP_AUTH_TOKEN` not set).
-- Live smoke test: 27/31 pass, 30 tools, 19 sources.
+- Auth: bearer token required on `/mcp` (`MCP_AUTH_TOKEN` set).
+- Edge cache is now active (it needs a custom domain).
+- Last live smoke test (2026-10-04, phase 1 + OpenAlex, old URL): 27/31 pass. Phase 2 code is merged but not live-tested (needs the token and phase 2 keys).
 
 ## Secrets and vars
 
@@ -20,23 +22,23 @@ Last updated: 2026-10-05.
 | `SPRINGER_API_KEY` | no | Springer Nature source (phase 2) |
 | `ADS_API_KEY` | no | NASA ADS source (phase 2) |
 | `NCBI_API_KEY` | no | Optional, higher PubMed limits |
-| `MCP_AUTH_TOKEN` | no | Optional, protects `/mcp` |
-| `CONTACT_EMAIL` (var) | empty | Enables Unpaywall, polite pools |
+| `MCP_AUTH_TOKEN` | yes | Protects `/mcp` |
+| `CONTACT_EMAIL` (var) | `dawood.engdawood.com` | Enables Unpaywall, polite pools. Value has no `@`, so Unpaywall will reject it; owner to confirm the address. |
 
 ## Open issues
 
 - Semantic Scholar 429 without a key (owner action: add key).
 - DBLP and IACR blocked from Cloudflare egress IPs. No code fix; possible workaround is a proxy, not planned.
-- GitHub default branch may still be `claude/determined-babbage-ehx4gj`; owner should set it to `main`.
+- `CONTACT_EMAIL` looks malformed (see above).
 - `read_paper` cannot fetch PDFs behind bot challenges (IACR, bioRxiv, many publishers).
 
 ## Roadmap
 
-- Phase 2 (free keys): done on branch `claude/phase-2-keyed-sources` (CORE, IEEE, Springer, ADS, OpenAlex fallback). Needs real keys for a live check.
+- Phase 2 (free keys): merged to `main` via PR #2 (CORE, IEEE, Springer, ADS, OpenAlex fallback). Keys not set yet, so those tools are hidden; live check pending.
 - Ideas: citation verification tool (inspired by tfscharff/doi-mcp), BibTeX export.
 - Phase 3 (paid or institutional): Scopus, Web of Science, ScienceDirect.
 
 ## History
 
 - 2026-10-04: Phase 1 built (18 free sources, 27 tools); PR #1 merged; OpenAlex added; deployed and live-tested.
-- 2026-10-05: Phase 2 adapters (CORE, IEEE, Springer, ADS) and OpenAlex citation fallback on `claude/phase-2-keyed-sources`.
+- 2026-10-05: Phase 2 (CORE, IEEE, Springer, ADS, OpenAlex citation fallback) merged via PR #2. Owner moved the Worker to custom domains, set `MCP_AUTH_TOKEN` and `CONTACT_EMAIL`. Merged feature branches deleted.

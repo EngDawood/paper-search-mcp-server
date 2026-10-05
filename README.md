@@ -118,7 +118,7 @@ Claude Desktop / others (via `mcp-remote`):
 ## Known limits
 
 - **Semantic Scholar** without a key shares a global rate limit and often returns 429. A free key fixes this.
-- **arXiv** asks for at most 1 request per 3 s. GET responses are cached for 1 h with the Workers Cache API. The cache only works on a custom domain; on `*.workers.dev` it does nothing.
+- **arXiv** asks for at most 1 request per 3 s. GET responses are cached for 1 h with the Workers Cache API. The cache only works on a custom domain; on `*.workers.dev` it does nothing. Adding custom-domain `routes` also turns `workers.dev` off unless you set `"workers_dev": true`.
 - **DBLP** sometimes serves a bot challenge (Anubis) to datacenter IPs.
 - **IACR PDFs, some publisher PDFs, and bioRxiv PDFs** can be behind Cloudflare/bot challenges, so `read_paper` cannot fetch them.
 - **bioRxiv/medRxiv** have no keyword API, so search scans recent postings (default 30 days, up to 800 papers).
