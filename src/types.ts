@@ -7,6 +7,14 @@ export interface Env {
   SEMANTIC_SCHOLAR_API_KEY?: string;
   /** OpenAlex API key (free). Enables the OpenAlex source and tools. */
   OPENALEX_API_KEY?: string;
+  /** CORE API key (free). Enables the CORE source. */
+  CORE_API_KEY?: string;
+  /** IEEE Xplore API key (free). Enables the IEEE source. */
+  IEEE_API_KEY?: string;
+  /** Springer Nature Meta API key (free). Enables the Springer source. */
+  SPRINGER_API_KEY?: string;
+  /** NASA ADS API token (free). Enables the ADS source. */
+  ADS_API_KEY?: string;
   /** Optional bearer token. When set, /mcp requires `Authorization: Bearer <token>`. */
   MCP_AUTH_TOKEN?: string;
 }

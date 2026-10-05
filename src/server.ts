@@ -12,6 +12,7 @@ import { searchRxiv } from "./sources/biorxiv";
 import { getCrossrefWork, searchCrossref } from "./sources/crossref";
 import { getOpenAlexRelations, getOpenAlexWork, searchOpenAlex } from "./sources/openalex";
 import { getS2Paper, getS2Relations } from "./sources/semantic";
+import { searchSpringer } from "./sources/springer";
 import type { Env } from "./types";
 
 export const VERSION = "0.1.0";
@@ -43,6 +44,24 @@ async function run(fn: () => Promise<unknown>) {
 }
 
 export function createServer(env: Env): McpServer {
+  /**
+   * Semantic Scholar without a key is often rate-limited. When OpenAlex is configured and the
+   * id is one OpenAlex understands (DOI or W-id), retry there. Results then carry source "openalex".
+   */
+  async function withOpenAlexFallback<T>(primary: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
+    try {
+      return await primary();
+    } catch (err) {
+      if (!env.OPENALEX_API_KEY) throw err;
+      try {
+        return await fallback();
+      } catch (err2) {
+        const m = (e: unknown) => (e instanceof Error ? e.message : String(e));
+        throw new Error(`Semantic Scholar: ${m(err)} | OpenAlex fallback: ${m(err2)}`);
+      }
+    }
+  }
+
   const SOURCES = activeSources(env);
   const DEFAULT_SOURCES = defaultSources(env);
   const server = new McpServer(
@@ -90,7 +109,7 @@ export function createServer(env: Env): McpServer {
 
   // One search_<id> tool per generic source. arXiv, Crossref and bio/medRxiv get richer tools below.
   for (const src of SOURCES) {
-    if (["arxiv", "crossref", "biorxiv", "medrxiv", "openalex"].includes(src.id)) continue;
+    if (["arxiv", "crossref", "biorxiv", "medrxiv", "openalex", "springer"].includes(src.id)) continue;
     server.registerTool(
       `search_${src.id}`,
       {
@@ -219,6 +238,25 @@ export function createServer(env: Env): McpServer {
     );
   }
 
+  if (env.SPRINGER_API_KEY) {
+    server.registerTool(
+      "search_springer",
+      {
+        title: "Search Springer Nature",
+        description: SOURCE_MAP.get("springer")!.description + " Supports Springer query syntax (title:, name:, journal:).",
+        inputSchema: {
+          query: z.string().min(1),
+          max_results: maxResults(10, 50),
+          year: yearArg,
+          open_access_only: z.boolean().default(false).describe("Only return open-access records (these include PDF links)."),
+        },
+        annotations: READ_ONLY,
+      },
+      async ({ query, max_results, year, open_access_only }) =>
+        run(() => searchSpringer(query, { maxResults: max_results, year, openAccessOnly: open_access_only }, env)),
+    );
+  }
+
   server.registerTool(
     "get_paper_by_doi",
     {
@@ -244,33 +282,45 @@ export function createServer(env: Env): McpServer {
     "get_paper_details",
     {
       title: "Get paper details",
-      description: "Semantic Scholar record for a paper: abstract, venue, citation/reference counts, open-access PDF.",
+      description: "Semantic Scholar record for a paper: abstract, venue, citation/reference counts, open-access PDF. Falls back to OpenAlex when configured.",
       inputSchema: { paper_id: paperIdArg },
       annotations: READ_ONLY,
     },
-    async ({ paper_id }) => run(() => getS2Paper(paper_id, env)),
+    async ({ paper_id }) => run(() => withOpenAlexFallback(() => getS2Paper(paper_id, env), () => getOpenAlexWork(paper_id, env))),
   );
 
   server.registerTool(
     "get_citing_papers",
     {
       title: "Get citing papers",
-      description: "Papers that cite the given paper (forward citations), via Semantic Scholar.",
+      description: "Papers that cite the given paper (forward citations), via Semantic Scholar, falling back to OpenAlex when configured.",
       inputSchema: { paper_id: paperIdArg, max_results: maxResults(20, 100) },
       annotations: READ_ONLY,
     },
-    async ({ paper_id, max_results }) => run(() => getS2Relations(paper_id, "citations", max_results, env)),
+    async ({ paper_id, max_results }) =>
+      run(() =>
+        withOpenAlexFallback(
+          () => getS2Relations(paper_id, "citations", max_results, env),
+          () => getOpenAlexRelations(paper_id, "cites", max_results, env),
+        ),
+      ),
   );
 
   server.registerTool(
     "get_referenced_papers",
     {
       title: "Get referenced papers",
-      description: "Papers referenced by the given paper (its bibliography), via Semantic Scholar.",
+      description: "Papers referenced by the given paper (its bibliography), via Semantic Scholar, falling back to OpenAlex when configured.",
       inputSchema: { paper_id: paperIdArg, max_results: maxResults(20, 100) },
       annotations: READ_ONLY,
     },
-    async ({ paper_id, max_results }) => run(() => getS2Relations(paper_id, "references", max_results, env)),
+    async ({ paper_id, max_results }) =>
+      run(() =>
+        withOpenAlexFallback(
+          () => getS2Relations(paper_id, "references", max_results, env),
+          () => getOpenAlexRelations(paper_id, "cited_by", max_results, env),
+        ),
+      ),
   );
 
   server.registerTool(

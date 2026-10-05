@@ -27,3 +27,11 @@ Short log of choices and the reason for each. Add new entries at the bottom.
 12. **`main` was created after the fact.** The repo started empty, so the feature branch became the only branch. `main` got a single `.gitignore` commit and was merged in (no force push). The owner now wants work pushed to `main` directly.
 
 13. **`OPENALEX_API_KEY` declared in `wrangler.jsonc` under `secrets.required`.** Documents the dependency and makes `wrangler dev` warn when it is missing. The value lives only in Cloudflare secrets.
+
+14. **`secrets.required` only lists `OPENALEX_API_KEY`.** Wrangler fails a deploy if a listed secret is unset, so optional keys must not be listed. Side effect: with the list present, `wrangler dev` loads only listed names from `.dev.vars`; test other keys with a temporary config copy (`wrangler dev -c`). Deploys keep existing secrets regardless.
+
+15. **Keys in headers where the API allows it; cache off where it does not.** CORE, ADS and OpenAlex use Bearer headers. IEEE and Springer only accept the key in the URL, so those requests use `cacheTtl: 0` to keep keys out of cache keys.
+
+16. **Citation tools fall back to OpenAlex** when Semantic Scholar errors and `OPENALEX_API_KEY` is set. Output shape is unchanged; the `source` field shows which service answered.
+
+17. **Phase 2 adapters were verified with mocked responses and fake-key round trips only** (each API returned its auth error, proving the request shape and key placement). Real-key results still need a live check.

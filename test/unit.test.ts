@@ -104,5 +104,9 @@ describe("OpenAlex", async () => {
   it("normalizes ids", () => {
     expect(openalexId("https://openalex.org/W2741809807")).toBe("W2741809807");
     expect(openalexId("https://doi.org/10.1038/nature14539")).toBe("doi:10.1038/nature14539");
+    expect(openalexId("DOI:10.1038/nature14539")).toBe("doi:10.1038/nature14539");
+    expect(openalexId("arXiv:1706.03762v5")).toBe("doi:10.48550/arxiv.1706.03762");
+    expect(openalexId("1706.03762")).toBe("doi:10.48550/arxiv.1706.03762");
+    expect(openalexId("PMID:12345")).toBe("pmid:12345");
   });
 });

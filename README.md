@@ -34,11 +34,16 @@ Phase 1 covers **18 sources that need no API key**.
 
 | id | Source | Secret | Adds tools |
 |---|---|---|---|
-| `openalex` | OpenAlex (250M+ works, all disciplines) | `OPENALEX_API_KEY` (free at openalex.org) | `search_openalex`, `get_openalex_work`, `get_openalex_citations`; also joins the `search_papers` defaults |
+| `openalex` | OpenAlex (250M+ works, all disciplines) | `OPENALEX_API_KEY` (free at openalex.org) | `search_openalex`, `get_openalex_work`, `get_openalex_citations`; joins `search_papers` defaults; fallback for the citation tools |
+| `core` | CORE (300M+ open-access papers) | `CORE_API_KEY` (free at core.ac.uk/services/api) | `search_core`; joins `search_papers` defaults |
+| `ieee` | IEEE Xplore | `IEEE_API_KEY` (free at developer.ieee.org) | `search_ieee` |
+| `springer` | Springer Nature (Springer, Nature, BMC) | `SPRINGER_API_KEY` (free at dev.springernature.com) | `search_springer` (with `open_access_only`) |
+| `ads` | NASA ADS (astronomy, astrophysics, physics) | `ADS_API_KEY` (free token in ADS settings) | `search_ads` |
 
-These tools only appear when the secret is set.
+These tools only appear when the secret is set. With `OPENALEX_API_KEY` set, `get_paper_details`, `get_citing_papers`
+and `get_referenced_papers` retry on OpenAlex when Semantic Scholar fails (results then have `source: "openalex"`).
 
-## Tools (27 without keys, 30 with OpenAlex)
+## Tools (27 without keys, up to 34 with all keys)
 
 | Tool | Purpose |
 |---|---|
@@ -82,6 +87,10 @@ npx wrangler secret put MCP_AUTH_TOKEN            # require Authorization: Beare
 npx wrangler secret put NCBI_API_KEY              # PubMed/PMC 3 -> 10 req/s
 npx wrangler secret put SEMANTIC_SCHOLAR_API_KEY  # free key, avoids the shared 429 pool
 npx wrangler secret put OPENALEX_API_KEY          # enables OpenAlex search and citation graph
+npx wrangler secret put CORE_API_KEY              # enables CORE
+npx wrangler secret put IEEE_API_KEY              # enables IEEE Xplore
+npx wrangler secret put SPRINGER_API_KEY          # enables Springer Nature
+npx wrangler secret put ADS_API_KEY               # enables NASA ADS
 ```
 
 `wrangler.jsonc` sets `limits.cpu_ms = 60000` because PDF parsing is CPU-heavy, and that setting requires the **Workers Paid** plan.
@@ -116,7 +125,7 @@ Claude Desktop / others (via `mcp-remote`):
 
 ## Roadmap
 
-- Phase 2 (free API keys): OpenAlex (done), CORE, IEEE Xplore, Springer Nature, NASA ADS.
+- Phase 2 (free API keys): OpenAlex, CORE, IEEE Xplore, Springer Nature, NASA ADS (done).
 - Phase 3 (paid or institutional): Scopus, Web of Science, ScienceDirect.
 
 ## Acknowledgements
