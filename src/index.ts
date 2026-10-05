@@ -6,7 +6,7 @@ import type { Env } from "./types";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Mcp-Session-Id, Mcp-Protocol-Version, Last-Event-ID",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key, Accept, Mcp-Session-Id, Mcp-Protocol-Version, Last-Event-ID",
   "Access-Control-Expose-Headers": "Mcp-Session-Id, Mcp-Protocol-Version",
 };
 
@@ -25,11 +25,16 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+// Token from `Authorization: Bearer`, `X-API-Key` (claude.ai connectors), or `?token=`.
+export function requestToken(req: Request): string {
+  const header = req.headers.get("Authorization") ?? "";
+  if (header.startsWith("Bearer ")) return header.slice(7);
+  return req.headers.get("X-API-Key") ?? new URL(req.url).searchParams.get("token") ?? "";
+}
+
 function authorized(req: Request, env: Env): boolean {
   if (!env.MCP_AUTH_TOKEN) return true;
-  const header = req.headers.get("Authorization") ?? "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : new URL(req.url).searchParams.get("token") ?? "";
-  return timingSafeEqual(token, env.MCP_AUTH_TOKEN);
+  return timingSafeEqual(requestToken(req), env.MCP_AUTH_TOKEN);
 }
 
 async function handleMcp(req: Request, env: Env): Promise<Response> {
@@ -61,6 +66,12 @@ export default {
       }
     }
 
+    // No OAuth here. Answer discovery probes with a clean JSON 404 (with CORS) so clients
+    // fall back to header auth instead of failing on a plain-text 404.
+    if (url.pathname.startsWith("/.well-known/")) {
+      return withCors(Response.json({ error: "not_found", auth: "Use Authorization: Bearer or X-API-Key" }, { status: 404 }));
+    }
+
     if (url.pathname === "/health") return Response.json({ ok: true, version: VERSION });
 
     if (url.pathname === "/") {
@@ -69,7 +80,7 @@ export default {
         version: VERSION,
         mcp_endpoint: `${url.origin}/mcp`,
         transport: "streamable-http (stateless, JSON responses)",
-        auth: env.MCP_AUTH_TOKEN ? "bearer token required" : "none",
+        auth: env.MCP_AUTH_TOKEN ? "token required (Authorization: Bearer or X-API-Key)" : "none",
         sources: activeSources(env).map((s) => ({ id: s.id, name: s.name })),
       });
     }

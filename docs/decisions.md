@@ -38,4 +38,4 @@ Short log of choices and the reason for each. Add new entries at the bottom.
 
 18. **Custom domains instead of workers.dev** (owner's change). `routes` with `custom_domain: true` for `paper-search-mcp.engdawood.com` and `www.`. This turns workers.dev off and makes the edge cache work. Add `"workers_dev": true` only if the old URL is needed again.
 
-19. **`/mcp` is protected with `MCP_AUTH_TOKEN`** (owner's change). `/` and `/health` stay public. Clients send `Authorization: Bearer <token>`; the smoke script takes the token as its second argument.
+19. **`/mcp` is protected with `MCP_AUTH_TOKEN`** (owner's change). `/` and `/health` stay public. Clients send `Authorization: Bearer <token>` or `X-API-Key: <token>` (claude.ai connectors only offer fixed header names, not Bearer); `?token=` also works; the smoke script takes the token as its second argument.
