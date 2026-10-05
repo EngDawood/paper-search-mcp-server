@@ -109,6 +109,8 @@ claude.ai custom connector: URL `https://<host>/mcp`, header `x-api-key` with th
 
 Without a token (when `MCP_AUTH_TOKEN` is set) the server still works, limited to 30 requests per minute per IP and without `read_paper`.
 
+Every tool call is logged to Workers Analytics Engine (tool, query, status, timing, country; no IPs or tokens). See `docs/status.md` for how to query it.
+
 Claude Desktop / others (via `mcp-remote`):
 
 ```json

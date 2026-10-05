@@ -6,6 +6,7 @@ import { europePmcFullText } from "./lib/fulltext";
 import { fetchPdf, pdfToText } from "./lib/pdf";
 import { findOpenAccessPdf, pdfUrlFor } from "./lib/resolve";
 import { extractDoi } from "./lib/text";
+import { countResults, logCall } from "./lib/usage";
 import { activeSources, defaultSources, SOURCE_MAP } from "./sources";
 import { queryArxiv } from "./sources/arxiv";
 import { searchRxiv } from "./sources/biorxiv";
@@ -43,8 +44,14 @@ async function run(fn: () => Promise<unknown>) {
   }
 }
 
-/** `anonymous`: request had no token while MCP_AUTH_TOKEN is set. Hides token-only tools. */
-export function createServer(env: Env, { anonymous = false }: { anonymous?: boolean } = {}): McpServer {
+export interface RequestInfo {
+  /** Request had no token while MCP_AUTH_TOKEN is set. Hides token-only tools. */
+  anonymous?: boolean;
+  /** Two-letter country from request.cf, for usage stats. */
+  country?: string;
+}
+
+export function createServer(env: Env, { anonymous = false, country = "" }: RequestInfo = {}): McpServer {
   /**
    * Semantic Scholar without a key is often rate-limited. When OpenAlex is configured and the
    * id is one OpenAlex understands (DOI or W-id), retry there. Results then carry source "openalex".
@@ -76,6 +83,27 @@ export function createServer(env: Env, { anonymous = false }: { anonymous?: bool
         (anonymous ? "." : ", and read_paper to extract full text (paginate with offset)."),
     },
   );
+
+  // Log every tool call to the usage dataset (see src/lib/usage.ts).
+  const register = server.registerTool.bind(server);
+  type Handler = (args: Record<string, unknown>, extra: unknown) => Promise<{ isError?: boolean; content: { text?: string }[] }>;
+  server.registerTool = ((name: string, config: unknown, handler: Handler) =>
+    register(name, config as never, (async (args: Record<string, unknown>, extra: unknown) => {
+      const start = Date.now();
+      const res = await handler(args, extra);
+      const text = res.content[0]?.text ?? "";
+      logCall(env, {
+        tool: name,
+        tier: anonymous ? "anonymous" : "full",
+        country,
+        args: args ?? {},
+        ok: !res.isError,
+        error: res.isError ? text : "",
+        results: res.isError ? 0 : countResults(text),
+        ms: Date.now() - start,
+      });
+      return res;
+    }) as never)) as typeof server.registerTool;
 
   server.registerTool(
     "list_sources",
