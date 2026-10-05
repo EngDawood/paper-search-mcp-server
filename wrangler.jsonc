@@ -28,7 +28,7 @@
   },
   "vars": {
     // Optional. Enables Unpaywall and puts you in Crossref's / NCBI's polite pool.
-    "CONTACT_EMAIL": "dawood.engdawood.com"
+    "CONTACT_EMAIL": "dawood@engdawood.com"
   }
   // Other optional secrets (wrangler secret put <NAME>):
   //   MCP_AUTH_TOKEN            protect /mcp with a bearer token
