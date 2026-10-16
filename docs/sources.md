@@ -34,11 +34,23 @@ Live status is from the smoke test against the deployed Worker on 2026-10-04.
 | springer | `SPRINGER_API_KEY` | `api.springernature.com/meta/v2/json` | Key in query string (`api_key`), cache off. `p` is page size (max 50). Abstract may be a string or an object. Creators are "Last, First". | untested (no key) |
 | ads | `ADS_API_KEY` | `api.adsabs.harvard.edu/v1/search/query` | Bearer header. `year:A-B` filter. `pubdate` uses `-00` for unknown parts. PDF prefers arXiv. | untested (no key) |
 
+## Arabic (src/arabic)
+
+| id | Secret | Endpoint | Notes |
+|---|---|---|---|
+| mandumah | `FIRECRAWL_API_KEY` | `search.mandumah.com` scraped with `POST api.firecrawl.dev/v1/scrape` (`markdown` + `rawHtml`) | Results are parsed from HTML first (markdown drops spaces around highlighted terms), total count from markdown. Date filter needs `daterange[]=publishDate`. Newest first is `sort=year`, oldest `sort=year asc`. Author death dates are stripped. |
+| mandumah_exa | `EXA_API_KEY` | Exa over `search.mandumah.com` | Fallback when Firecrawl is not set. |
+| asjp, shamaa, researchgate, academia, google_scholar | `EXA_API_KEY` | `POST api.exa.ai/search` with `includeDomains` | Core set (`all`). Never send `category` with `includeDomains` (Exa then ignores the domains). Results are filtered by hostname and cleaned in `exa-result-cleaner.ts`; Exa is asked for 2x results. |
+| ekb, ajsrp, najsp, pal_ea, doaj, emarefa, theses_dz, kauj, democraticac, acm, sciencedirect | `EXA_API_KEY` | same | Opt-in, named in `platforms`. EKB is searched with `userLocation: EG`, the others with none. |
+
+Full per-source notes, rejected sites and how to add a site: see the arabic-scholar-mcp CLAUDE.md, mirrored in `src/arabic/constants.ts` comments.
+
 ## Lookup only
 
 | Service | Used by | Notes |
 |---|---|---|
-| Unpaywall `api.unpaywall.org/v2/{doi}` | `find_open_access_pdf` | Needs `CONTACT_EMAIL`; rejects example.com addresses. Skipped when unset. |
+| doi.org content negotiation | `cite_paper` | `Accept: text/x-bibliography; style=...` or `application/x-bibtex`. Works for Crossref and DataCite DOIs (arXiv uses `10.48550/arXiv.<id>`). Cached 24 h. |
+| Unpaywall `api.unpaywall.org/v2/{doi}` | `find_open_access_pdf`, `find_pdf_anywhere` | Needs `CONTACT_EMAIL`; rejects example.com addresses. Skipped when unset. |
 
 ## Rejected or deferred
 

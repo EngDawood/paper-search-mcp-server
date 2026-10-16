@@ -16,6 +16,16 @@
 	],
 
   "observability": { "enabled": true },
+  // Usage analytics (src/analytics). Shared with the arabic-scholar-mcp database; apply new tables with
+  // `npx wrangler d1 migrations apply arabic-scholar-analytics --remote`. The server works without it.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "arabic-scholar-analytics",
+      "database_id": "585c78cc-669c-4786-92e5-274003f64914",
+      "migrations_dir": "migrations"
+    }
+  ],
   // PDF text extraction (read_paper) is CPU-heavy; this needs the Workers Paid plan.
   // Remove "limits" if you deploy on the Free plan (searches still work, read_paper may hit the 10 ms CPU cap).
   "limits": { "cpu_ms": 60000 },
@@ -38,4 +48,6 @@
   //   IEEE_API_KEY              enables IEEE Xplore (developer.ieee.org)
   //   SPRINGER_API_KEY          enables Springer Nature (dev.springernature.com)
   //   ADS_API_KEY               enables NASA ADS (ui.adsabs.harvard.edu, Settings > API Token)
+  //   FIRECRAWL_API_KEY         enables the Mandumah tools (firecrawl.dev)
+  //   EXA_API_KEY               enables the Arabic open-access sources and get_pdf_url (exa.ai)
 }

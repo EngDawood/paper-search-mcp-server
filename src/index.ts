@@ -1,4 +1,5 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createRecorder } from "./analytics";
 import { createServer, VERSION } from "./server";
 import { activeSources } from "./sources";
 import type { Env } from "./types";
@@ -32,16 +33,18 @@ function authorized(req: Request, env: Env): boolean {
   return timingSafeEqual(token, env.MCP_AUTH_TOKEN);
 }
 
-async function handleMcp(req: Request, env: Env): Promise<Response> {
+async function handleMcp(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   // Stateless mode: a fresh server + transport per request. No Durable Objects needed.
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  const server = createServer(env);
+  const rec = createRecorder({ db: env.DB, waitUntil: (p) => ctx.waitUntil(p), request: req });
+  await rec.observe(req);
+  const server = createServer(env, rec);
   await server.connect(transport);
   return transport.handleRequest(req);
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
@@ -52,7 +55,7 @@ export default {
         return withCors(new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } }));
       }
       try {
-        return withCors(await handleMcp(req, env));
+        return withCors(await handleMcp(req, env, ctx));
       } catch (err) {
         console.error("mcp error", err);
         return withCors(

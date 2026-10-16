@@ -1,6 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/sdk/validation/cfworker-provider.js";
 import { z } from "zod";
+import { instrumentServer, registerUsageStatsTool, type Recorder } from "./analytics";
+import { registerArabicTools } from "./arabic";
+import { registerCrossTools } from "./cross";
 import { searchMany } from "./lib/aggregate";
 import { europePmcFullText } from "./lib/fulltext";
 import { fetchPdf, pdfToText } from "./lib/pdf";
@@ -43,7 +46,7 @@ async function run(fn: () => Promise<unknown>) {
   }
 }
 
-export function createServer(env: Env): McpServer {
+export function createServer(env: Env, rec?: Recorder): McpServer {
   /**
    * Semantic Scholar without a key is often rate-limited. When OpenAlex is configured and the
    * id is one OpenAlex understands (DOI or W-id), retry there. Results then carry source "openalex".
@@ -71,9 +74,14 @@ export function createServer(env: Env): McpServer {
       instructions:
         `Search academic papers across ${SOURCES.length} sources. Start with search_papers for broad discovery, ` +
         "use search_<source> for source-specific syntax, get_paper_details / get_citing_papers for citation graphs, " +
-        "find_open_access_pdf to locate a legal PDF, and read_paper to extract full text (paginate with offset).",
+        "find_open_access_pdf to locate a legal PDF, and read_paper to extract full text (paginate with offset). " +
+        "search_all covers international and Arabic sources in one call; search_arabic_papers and mandumah_* are Arabic-specific; " +
+        "cite_paper formats citations and find_pdf_anywhere takes a DOI, title or URL.",
     },
   );
+
+  // Analytics: wrap registerTool before any tool is registered so every handler is recorded.
+  if (rec) instrumentServer(server, rec);
 
   server.registerTool(
     "list_sources",
@@ -387,6 +395,13 @@ export function createServer(env: Env): McpServer {
         };
       }),
   );
+
+  // Arabic sources (Mandumah via Firecrawl, open-access repositories via Exa); each tool registers only when its key is set.
+  registerArabicTools(server, env);
+  // Cross-source tools: search_all, find_pdf_anywhere, cite_paper.
+  registerCrossTools(server, env, run);
+
+  if (env.DB) registerUsageStatsTool(server, env.DB);
 
   return server;
 }
