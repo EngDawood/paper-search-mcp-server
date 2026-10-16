@@ -118,6 +118,36 @@ export function registerCrossTools(server: McpServer, env: Env, run: Run): void 
       }),
   );
 
+  if (env.FIRECRAWL_API_KEY || hasExa) {
+    server.registerTool(
+      "search_google_scholar",
+      {
+        title: "Search Google Scholar",
+        description:
+          `Search Google Scholar (any language). ${env.FIRECRAWL_API_KEY ? "Scrapes Scholar directly through Firecrawl (authors, venue, year, citation count, PDF link)" : "Searches Scholar pages through Exa"}` +
+          `${env.FIRECRAWL_API_KEY && hasExa ? ", falling back to Exa when the scrape fails or finds nothing" : ""}. ` +
+          "Each paper's extra.via says which path answered.",
+        inputSchema: {
+          query: z.string().min(1).max(500),
+          max_results: z.number().int().min(1).max(20).default(10),
+          year: z
+            .string()
+            .regex(/^\s*(\d{4})?\s*-?\s*(\d{4})?\s*$/)
+            .optional()
+            .describe('Publication year filter: "2023", "2019-2023", "2020-" or "-2015" (direct scrape only).'),
+        },
+        annotations: READ_ONLY,
+      },
+      async ({ query, max_results, year }) =>
+        run(async () => {
+          const { papers, outcomes } = await searchArabic(query, { maxResults: max_results, year, platforms: ["google_scholar"] }, env);
+          const o = outcomes[0];
+          if (o?.error && !papers.length) throw new Error(o.error);
+          return { query, total: papers.length, ...(o ? { source: o } : {}), papers };
+        }),
+    );
+  }
+
   server.registerTool(
     "find_pdf_anywhere",
     {

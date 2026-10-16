@@ -36,7 +36,7 @@ Last updated: 2026-10-16.
 - `read_paper` cannot fetch PDFs behind bot challenges (IACR, bioRxiv, many publishers).
 
 - Arabic merge (2026-10-16) is verified with unit tests and mocked fetch only. Needs a live check with the two keys. The old arabic-scholar-mcp Worker can be retired after that.
-- Exa's `google_scholar` platform (Arabic core set) indexes Google Scholar pages through Exa. This is not direct scraping, but it sits close to the "no Google Scholar scraping" rule; owner to confirm.
+- Google Scholar direct scrape is tested on two real pages fetched through Firecrawl (October 2026). Google sometimes serves Firecrawl a reduced page (1 result), which is not treated as a failure.
 
 ## Roadmap
 

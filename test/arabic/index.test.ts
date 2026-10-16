@@ -36,7 +36,7 @@ describe('registration by key', () => {
 describe('arabicSourceIds', () => {
   it('follows the keys', () => {
     expect(arabicSourceIds({})).toEqual([]);
-    expect(arabicSourceIds({ FIRECRAWL_API_KEY: 'k' })).toEqual(['mandumah']);
+    expect(arabicSourceIds({ FIRECRAWL_API_KEY: 'k' })).toEqual(['mandumah', 'google_scholar']);
     expect(arabicSourceIds({ EXA_API_KEY: 'k' })).toEqual(expect.arrayContaining(['mandumah_exa', 'asjp', 'ekb']));
   });
 });

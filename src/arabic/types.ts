@@ -185,6 +185,10 @@ export interface UnifiedSearchResult {
   snippet?: string;
   score?: number;
   isPdfDirect?: boolean;
+  // Google Scholar (direct scrape) fields
+  pdfUrl?: string;
+  citations?: number;
+  clusterId?: string;
 }
 
 /**
@@ -199,6 +203,8 @@ export interface UnifiedSearchResultGroup {
     searchUrl?: string;     // Mandumah search URL
     hasMore?: boolean;      // Mandumah pagination
     nextPage?: number;
+    via?: "direct" | "exa";   // Google Scholar: scraped directly or through Exa
+    fallbackReason?: string;  // why the direct scrape was not used
   };
 }
 

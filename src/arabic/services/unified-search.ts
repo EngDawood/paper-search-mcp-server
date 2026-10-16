@@ -12,6 +12,7 @@ import type {
 } from "../types";
 import { searchScholar } from "./scholar-client";
 import { searchWithDomains } from "./pdf-finder";
+import { searchGoogleScholar } from "./google-scholar";
 import { urlKey } from "./exa-result-cleaner";
 import { UNIFIED_SEARCH_PLATFORMS, CORE_OPEN_ACCESS_KEYS, locationForSource, type OpenAccessRepositoryKey } from "../constants";
 
@@ -37,6 +38,11 @@ function resolveSearchTargets(
     if (hasExa) {
       // Core open-access repositories (the rest are opt-in by key)
       targets.openAccess = [...CORE_OPEN_ACCESS_KEYS];
+    } else if (hasFirecrawl) {
+      // Google Scholar is scraped directly, so it needs only Firecrawl
+      targets.openAccess = ["google_scholar"];
+    }
+    if (hasExa) {
       // Add mandumah_exa only if Firecrawl is NOT available (fallback)
       if (!hasFirecrawl) {
         targets.mandumahExa = true;
@@ -51,7 +57,7 @@ function resolveSearchTargets(
       targets.mandumah = true;
     } else if (platform === "mandumah_exa" && hasExa) {
       targets.mandumahExa = true;
-    } else if (platform in UNIFIED_SEARCH_PLATFORMS && hasExa) {
+    } else if (platform in UNIFIED_SEARCH_PLATFORMS && (hasExa || (platform === "google_scholar" && hasFirecrawl))) {
       // Open-access repository
       if (!targets.openAccess.includes(platform)) {
         targets.openAccess.push(platform);
@@ -205,7 +211,7 @@ export async function searchArabicPapers(
   }
 
   // 3. Search open-access repositories via Exa
-  if (targets.openAccess.length > 0 && exaApiKey) {
+  if (targets.openAccess.length > 0) {
     for (const platform of targets.openAccess) {
       searchedPlatforms.push(platform);
       const platformConfig = UNIFIED_SEARCH_PLATFORMS[platform as keyof typeof UNIFIED_SEARCH_PLATFORMS];
@@ -213,23 +219,59 @@ export async function searchArabicPapers(
       searchPromises.push(
         (async () => {
           const t0 = Date.now();
-          try {
+          const viaExa = async () => {
             const results = await searchWithDomains(
               query,
               authors,
               [platformConfig.domain],
               max_results_per_source || 5,
-              exaApiKey,
+              exaApiKey!,
               // explicit user_location wins; otherwise the source's own (EKB: EG), else none
               params.user_location ?? locationForSource(platform as OpenAccessRepositoryKey),
               false
             );
+            return results.map(convertExaResult);
+          };
+          try {
+            // Google Scholar: scrape it directly first, fall back to Exa on failure or no results.
+            if (platform === "google_scholar" && firecrawlKey) {
+              let directError: string | undefined;
+              try {
+                const gs = await searchGoogleScholar(
+                  query,
+                  { maxResults: max_results_per_source || 5, yearFrom: params.date_from, yearTo: params.date_to },
+                  firecrawlKey
+                );
+                if (gs.results.length || !exaApiKey) {
+                  resultGroups.push({
+                    source: platform,
+                    sourceLabel: platformConfig.name,
+                    totalFound: gs.total ?? gs.results.length,
+                    results: gs.results,
+                    metadata: { searchUrl: gs.searchUrl, via: "direct" }
+                  });
+                  return;
+                }
+                directError = "no results";
+              } catch (error) {
+                directError = error instanceof Error ? error.message : String(error);
+                if (!exaApiKey) throw error;
+              }
+              resultGroups.push({
+                source: platform,
+                sourceLabel: platformConfig.name,
+                totalFound: 0,
+                results: await viaExa(),
+                metadata: { via: "exa", fallbackReason: directError }
+              });
+              return;
+            }
 
             resultGroups.push({
               source: platform,
               sourceLabel: platformConfig.name,
-              totalFound: results.length,
-              results: results.map(convertExaResult)
+              totalFound: 0,
+              results: await viaExa()
             });
           } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);
@@ -258,7 +300,7 @@ export async function searchArabicPapers(
       seenUrls.add(key);
       return true;
     });
-    if (group.source !== "mandumah") group.totalFound = group.results.length;
+    if (group.source !== "mandumah" && group.metadata?.via !== "direct") group.totalFound = group.results.length;
   }
 
   // Calculate total results

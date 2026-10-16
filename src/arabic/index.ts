@@ -39,6 +39,8 @@ export function arabicSourceIds(env: ArabicEnv): string[] {
   const ids: string[] = [];
   if (env.FIRECRAWL_API_KEY) ids.push("mandumah");
   if (env.EXA_API_KEY) ids.push("mandumah_exa", ...OPEN_ACCESS_KEYS);
+  // Google Scholar is scraped directly with Firecrawl alone
+  else if (env.FIRECRAWL_API_KEY) ids.push("google_scholar");
   return ids;
 }
 
@@ -47,6 +49,9 @@ interface Outcome {
   count: number;
   error?: string;
   ms: number;
+  /** Google Scholar: "direct" (Firecrawl scrape) or "exa" (fallback) */
+  via?: string;
+  fallback_reason?: string;
 }
 
 /** Error strings from searchArabicPapers start with a label; map each back to its source id */
@@ -69,13 +74,15 @@ function toPaper(r: UnifiedSearchResult, source: string, raw?: ScholarSearchResu
   if (r.contentType) extra.content_type = r.contentType;
   if (r.peerReviewed !== undefined) extra.peer_reviewed = r.peerReviewed;
   if (r.id) extra.record_id = r.id;
+  if (r.clusterId) extra.scholar_cluster_id = r.clusterId;
   return paper({
     paper_id: r.id ?? r.url,
     title: r.title,
     authors: r.authors ?? [],
     abstract: r.abstract ?? r.snippet ?? "",
     published_date: r.year ?? "",
-    pdf_url: raw?.downloadUrl ?? (r.isPdfDirect ? r.url : ""),
+    pdf_url: raw?.downloadUrl ?? r.pdfUrl ?? (r.isPdfDirect ? r.url : ""),
+    citations: r.citations,
     url: r.url,
     source: isMandumah ? "mandumah" : source,
     venue: r.journal,
@@ -115,10 +122,16 @@ export async function searchArabic(
   const rawById = new Map(raw.map((r) => [r.id, r]));
   const papers: Paper[] = [];
   const counts = new Map<string, number>();
+  const via = new Map<string, { via?: string; fallback_reason?: string }>();
   for (const g of response.resultGroups) {
     const items = g.results.slice(0, opts.maxResults);
     counts.set(g.source, items.length);
-    for (const r of items) papers.push(toPaper(r, g.source, r.id ? rawById.get(r.id) : undefined));
+    if (g.metadata?.via) via.set(g.source, { via: g.metadata.via, ...(g.metadata.fallbackReason ? { fallback_reason: g.metadata.fallbackReason } : {}) });
+    for (const r of items) {
+      const p = toPaper(r, g.source, r.id ? rawById.get(r.id) : undefined);
+      if (g.metadata?.via) p.extra = { ...p.extra, via: g.metadata.via };
+      papers.push(p);
+    }
   }
 
   const errors = new Map<string, string>();
@@ -131,6 +144,7 @@ export async function searchArabic(
     count: counts.get(source) ?? 0,
     ...(errors.has(source) ? { error: errors.get(source) } : {}),
     ms: timings.get(source) ?? 0,
+    ...via.get(source),
   }));
   return { papers, outcomes };
 }

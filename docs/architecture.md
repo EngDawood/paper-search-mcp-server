@@ -30,7 +30,7 @@ client --POST /mcp--> src/index.ts (CORS, optional bearer auth)
 | `src/lib/fulltext.ts` | Europe PMC `fullTextXML` (JATS) to plain text |
 | `src/lib/text.ts`, `src/lib/xml.ts` | Entity decoding, tag stripping, DOI and year parsing; fast-xml-parser wrapper |
 | `src/arabic/` | Arabic tools: Mandumah through Firecrawl (`services/firecrawl.ts`), open-access repositories through Exa (`services/exa.ts`), parsers, Exa result cleaner, formatters. `index.ts` exports `registerArabicTools`, `searchArabic`, `findArabicPdf`, `mandumahCitation` |
-| `src/cross/index.ts` | Cross-source tools: `search_all`, `find_pdf_anywhere`, `cite_paper` |
+| `src/cross/index.ts` | Cross-source tools: `search_all`, `search_google_scholar`, `find_pdf_anywhere`, `cite_paper` |
 | `src/analytics/` | D1 analytics: `recorder.ts` (instrumentServer wraps every tool), `context.ts` (AsyncLocalStorage hook used by `http.ts`), `stats.ts` (`usage_stats`), `text.ts` (Arabic normalization, language) |
 | `migrations/` | D1 schema. `0001` is the old Arabic server's `tool_calls` table (kept as is), `0002` adds the analytics tables and views |
 | `test/unit.test.ts` | Offline tests for parsers and helpers |

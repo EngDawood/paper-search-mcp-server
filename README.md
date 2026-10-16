@@ -56,9 +56,12 @@ Ported from [arabic-scholar-mcp](https://github.com/EngDawood/arabic-scholar-mcp
 | `FIRECRAWL_API_KEY` | Mandumah (دار المنظومة): `mandumah_search`, `mandumah_get_record`, `mandumah_get_citation`, Mandumah results in `search_arabic_papers` / `search_all`, Mandumah ids in `cite_paper` |
 | `EXA_API_KEY` | Open-access Arabic repositories through Exa: ASJP, SHAMAA, ResearchGate, Academia.edu, Google Scholar (core set), plus opt-in EKB, DOAJ, eMarefa, Algerian theses and others; `get_pdf_url`; Mandumah fallback (`mandumah_exa`) |
 
-`list_arabic_tools` lists every Arabic platform key. Source quirks are in `docs/sources.md`.
+Google Scholar is scraped directly through Firecrawl (authors, venue, year, citation count, PDF link) and falls back to
+Exa when the scrape is blocked or empty. It works with either key.
 
-## Tools (28 without keys, up to 45 with all keys)
+`list_arabic_tools` lists every Arabic platform key. Source quirks are in `docs/arabic.md`.
+
+## Tools (28 without keys, up to 46 with all keys)
 
 | Tool | Purpose |
 |---|---|
@@ -72,6 +75,7 @@ Ported from [arabic-scholar-mcp](https://github.com/EngDawood/arabic-scholar-mcp
 | `find_open_access_pdf` | Legal OA PDF links (Europe PMC, arXiv, Unpaywall if `CONTACT_EMAIL` is set, Semantic Scholar if keyed) |
 | `read_paper` | Full text from `pdf_url`, `source` + `paper_id`, or a DOI. Paginate with `offset` / `max_chars`. |
 | `search_all` | One query across the international defaults and the Arabic sources, de-duplicated across both (`scope`: all, international, arabic) |
+| `search_google_scholar` | Google Scholar in any language: direct scrape through Firecrawl, Exa fallback; `extra.via` says which answered |
 | `find_pdf_anywhere` | Legal PDF from a DOI, a title (Crossref title match, plus ASJP/SHAMAA for Arabic titles) or an ASJP/SHAMAA page URL |
 | `cite_paper` | APA, MLA, Chicago, Harvard, BibTeX for a DOI or arXiv id (DOI content negotiation); APA and MLA for a Mandumah record |
 | `search_arabic_papers` | Mandumah plus Arabic open-access repositories, grouped by source (needs either Arabic key) |

@@ -59,6 +59,7 @@ const cases = [
   // Cross-source and Arabic tools (Arabic ones need FIRECRAWL_API_KEY / EXA_API_KEY).
   ["search_all", { query: "الذكاء الاصطناعي في التعليم", max_results_per_source: 2 }],
   ["cite_paper", { doi: "10.1038/nature14539", styles: ["apa", "bibtex"] }],
+  ["search_google_scholar", { query: "arabic sentiment analysis", max_results: 3 }],
   ["find_pdf_anywhere", { doi: "10.1371/journal.pone.0000308" }],
   ["mandumah_list_filters", { response_format: "json" }],
   ["search_arabic_papers", { query: "الذكاء الاصطناعي", max_results_per_source: 2, response_format: "json" }],

@@ -54,8 +54,20 @@ function formatOpenAccessResult(result: UnifiedSearchResult, index: number): str
     parts.push(`   - Snippet: ${truncateText(result.snippet, 150)}`);
   }
 
+  if (result.authors?.length || result.journal || result.year) {
+    parts.push(`   - ${[result.authors?.join(", "), result.journal, result.year].filter(Boolean).join(" | ")}`);
+  }
+
   if (result.isPdfDirect) {
     parts.push(`   - 🔗 Direct PDF link`);
+  }
+
+  if (result.pdfUrl) {
+    parts.push(`   - PDF: ${result.pdfUrl}`);
+  }
+
+  if (result.citations !== undefined) {
+    parts.push(`   - Cited by: ${result.citations}`);
   }
 
   if (result.score !== undefined) {

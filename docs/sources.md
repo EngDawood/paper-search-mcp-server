@@ -40,10 +40,11 @@ Live status is from the smoke test against the deployed Worker on 2026-10-04.
 |---|---|---|---|
 | mandumah | `FIRECRAWL_API_KEY` | `search.mandumah.com` scraped with `POST api.firecrawl.dev/v1/scrape` (`markdown` + `rawHtml`) | Results are parsed from HTML first (markdown drops spaces around highlighted terms), total count from markdown. Date filter needs `daterange[]=publishDate`. Newest first is `sort=year`, oldest `sort=year asc`. Author death dates are stripped. |
 | mandumah_exa | `EXA_API_KEY` | Exa over `search.mandumah.com` | Fallback when Firecrawl is not set. |
-| asjp, shamaa, researchgate, academia, google_scholar | `EXA_API_KEY` | `POST api.exa.ai/search` with `includeDomains` | Core set (`all`). Never send `category` with `includeDomains` (Exa then ignores the domains). Results are filtered by hostname and cleaned in `exa-result-cleaner.ts`; Exa is asked for 2x results. |
+| google_scholar | `FIRECRAWL_API_KEY` and/or `EXA_API_KEY` | `scholar.google.com/scholar` scraped with Firecrawl (`rawHtml`); Exa fallback | Direct first; Exa when blocked, failed or empty. Parser and URL params in `docs/arabic.md`. |
+| asjp, shamaa, researchgate, academia | `EXA_API_KEY` | `POST api.exa.ai/search` with `includeDomains` | Core set (`all`). Never send `category` with `includeDomains` (Exa then ignores the domains). Results are filtered by hostname and cleaned in `exa-result-cleaner.ts`; Exa is asked for 2x results. |
 | ekb, ajsrp, najsp, pal_ea, doaj, emarefa, theses_dz, kauj, democraticac, acm, sciencedirect | `EXA_API_KEY` | same | Opt-in, named in `platforms`. EKB is searched with `userLocation: EG`, the others with none. |
 
-Full per-source notes, rejected sites and how to add a site: see the arabic-scholar-mcp CLAUDE.md, mirrored in `src/arabic/constants.ts` comments.
+Full per-source notes, rejected sites and how to add a site: `docs/arabic.md`.
 
 ## Lookup only
 
@@ -54,7 +55,7 @@ Full per-source notes, rejected sites and how to add a site: see the arabic-scho
 
 ## Rejected or deferred
 
-- Google Scholar, Sci-Hub: excluded on purpose.
+- Sci-Hub: excluded on purpose. (Google Scholar is now scraped through Firecrawl, decision 26.)
 - Scopus, Web of Science, ScienceDirect: paid or institutional; phase 3.
 - ChemRxiv public API: 403 from datacenter IPs.
 - CiteSeerX, SSRN: unreliable or scraping-only.
