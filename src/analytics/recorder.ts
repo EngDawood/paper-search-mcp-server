@@ -261,7 +261,10 @@ class RecorderImpl implements Recorder {
     const q = argObj.query;
     if (typeof q === "string" && q.trim()) {
       const { query: _q, sources, ...filters } = argObj;
-      const srcs = Array.isArray(sources) ? sources : tool.startsWith("search_") && tool !== "search_papers" ? [tool.slice(7)] : null;
+      // Multi-source tools name their sources in args; single-source search_<id> tools are their own source.
+      const multi = ["search_papers", "search_all", "search_arabic_papers"];
+      const named = [sources, argObj.arabic_platforms, argObj.platforms].flatMap((v) => (Array.isArray(v) ? v : []));
+      const srcs = named.length ? named : tool.startsWith("search_") && !multi.includes(tool) ? [tool.slice(7)] : null;
       stmts.push(
         db
           .prepare(

@@ -41,6 +41,18 @@ export function titleSimilarity(a: string, b: string): number {
   return hit / Math.max(A.size, B.size);
 }
 
+/** Same 25 s budget searchMany gives each international source; Firecrawl retries could otherwise take minutes. */
+const ARABIC_TIMEOUT_MS = 25_000;
+
+function withTimeout(p: Promise<{ papers: Paper[]; outcomes: SourceOutcome[] }>, source: string, ms = ARABIC_TIMEOUT_MS) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const t0 = Date.now();
+  const timeout = new Promise<{ papers: Paper[]; outcomes: SourceOutcome[] }>((resolve) => {
+    timer = setTimeout(() => resolve({ papers: [], outcomes: [{ source, count: 0, error: `timed out after ${ms}ms`, ms: Date.now() - t0 }] }), ms);
+  });
+  return Promise.race([p.finally(() => clearTimeout(timer)), timeout]);
+}
+
 const CSL_STYLES = { apa: "apa", mla: "modern-language-association", chicago: "chicago-author-date", harvard: "harvard-cite-them-right" } as const;
 type Style = keyof typeof CSL_STYLES | "bibtex";
 
@@ -89,7 +101,7 @@ export function registerCrossTools(server: McpServer, env: Env, run: Run): void 
         const tasks: Promise<{ papers: Paper[]; outcomes: SourceOutcome[] }>[] = [];
         if (scope !== "arabic") tasks.push(searchMany(query, intlIds, max_results_per_source, env, year));
         if (scope !== "international" && hasArabic)
-          tasks.push(searchArabic(query, { maxResults: max_results_per_source, year, platforms: arabic_platforms }, env));
+          tasks.push(withTimeout(searchArabic(query, { maxResults: max_results_per_source, year, platforms: arabic_platforms }, env), "arabic"));
         const parts = await Promise.all(tasks);
         const papers = dedupe(parts.flatMap((p) => p.papers));
         const outcomes = parts.flatMap((p) => p.outcomes);

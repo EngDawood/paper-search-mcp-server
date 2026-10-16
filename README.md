@@ -78,7 +78,7 @@ Ported from [arabic-scholar-mcp](https://github.com/EngDawood/arabic-scholar-mcp
 | `mandumah_search` / `mandumah_get_record` / `mandumah_get_citation` | Mandumah search with filters, full record, citations (`FIRECRAWL_API_KEY`) |
 | `mandumah_list_filters` / `list_arabic_tools` | Mandumah filter values; Arabic tools and platform keys |
 | `get_pdf_url` | Direct PDF link from an ASJP or SHAMAA article page (`EXA_API_KEY`) |
-| `usage_stats` | Usage analytics from D1: totals, daily series, top tools and queries, per-source error rate and p50/p95 latency, recent errors (needs the `DB` binding) |
+| `usage_stats` | Usage analytics from D1: totals, daily series, top tools and queries, per-source error rate and p50/p95 latency, recent errors (needs the `DB` binding and `MCP_AUTH_TOKEN`, since it returns stored queries) |
 
 Arabic tools take `response_format`: `markdown` (default), `json` or `text`.
 

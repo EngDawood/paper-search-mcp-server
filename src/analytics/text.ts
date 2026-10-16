@@ -67,6 +67,10 @@ const HOST_SOURCES: [RegExp, string | ((path: string) => string)][] = [
   [/^inspirehep\.net$/, "inspirehep"],
   [/^eprint\.iacr\.org$/, "iacr"],
   [/^api\.unpaywall\.org$/, "unpaywall"],
+  // Arabic: Firecrawl only scrapes Mandumah; Exa serves every open-access Arabic platform (per-site split is in query_results).
+  [/^api\.firecrawl\.dev$/, "mandumah"],
+  [/^api\.exa\.ai$/, "exa"],
+  [/^doi\.org$/, "doi"],
 ];
 
 /** Best-effort source id for an upstream host (null when unknown). */

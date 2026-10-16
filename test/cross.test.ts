@@ -41,3 +41,24 @@ describe("doiCitation", () => {
     await expect(doiCitation("10.1000/none", "apa")).rejects.toThrow(/HTML/);
   });
 });
+
+describe("search_all", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("returns a timeout outcome when the Arabic side hangs", async () => {
+    vi.useFakeTimers();
+    // Every upstream call hangs forever.
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
+    const { createServer } = await import("../src/server");
+    const server = createServer({ EXA_API_KEY: "x" }) as any;
+    const handler = server._registeredTools.search_all.handler;
+    const pending = handler({ query: "تعليم", scope: "arabic", max_results_per_source: 2 }, {});
+    await vi.advanceTimersByTimeAsync(26_000);
+    const out = JSON.parse((await pending).content[0].text);
+    expect(out.total).toBe(0);
+    expect(out.sources).toEqual([expect.objectContaining({ source: "arabic", error: expect.stringMatching(/timed out/) })]);
+  });
+});

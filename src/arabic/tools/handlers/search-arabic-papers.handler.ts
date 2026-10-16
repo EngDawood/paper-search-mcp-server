@@ -33,6 +33,7 @@ export async function handleSearchArabicPapers(
         sort: params.sort,
         authors: params.authors,
         max_results_per_source: params.max_results_per_source,
+        user_location: params.user_location,
         response_format: params.response_format,
       },
       deps.hasFirecrawl,

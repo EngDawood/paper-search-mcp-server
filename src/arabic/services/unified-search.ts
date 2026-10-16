@@ -220,7 +220,7 @@ export async function searchArabicPapers(
               [platformConfig.domain],
               max_results_per_source || 5,
               exaApiKey,
-              // explicit user_location wins; otherwise the source's own (EKB: EG), else the default (SA)
+              // explicit user_location wins; otherwise the source's own (EKB: EG), else none
               params.user_location ?? locationForSource(platform as OpenAccessRepositoryKey),
               false
             );

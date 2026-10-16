@@ -401,7 +401,8 @@ export function createServer(env: Env, rec?: Recorder): McpServer {
   // Cross-source tools: search_all, find_pdf_anywhere, cite_paper.
   registerCrossTools(server, env, run);
 
-  if (env.DB) registerUsageStatsTool(server, env.DB);
+  // usage_stats returns stored queries and client details, so it is only exposed when /mcp requires a token.
+  if (env.DB && env.MCP_AUTH_TOKEN) registerUsageStatsTool(server, env.DB);
 
   return server;
 }
