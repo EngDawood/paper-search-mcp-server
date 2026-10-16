@@ -14,7 +14,9 @@ function key(p: Paper): string {
   if (doi) return `doi:${doi}`;
   const arxivId = (p.source === "arxiv" ? p.paper_id : (p.extra?.arxiv_id as string)) ?? "";
   if (arxivId) return `arxiv:${arxivId.replace(/v\d+$/, "")}`;
-  return `t:${p.title.toLowerCase().replace(/[^a-z0-9]+/g, "")}`;
+  // Unicode-aware so Arabic titles keep their letters (a-z only would collapse them all to "t:").
+  const t = p.title.toLowerCase().replace(/[\u064B-\u0652\u0640]/g, "").replace(/[^\p{L}\p{N}]+/gu, "");
+  return t ? `t:${t}` : `id:${p.source}:${p.paper_id}`;
 }
 
 /** Keep the first occurrence but fill missing fields from duplicates. */

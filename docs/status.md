@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-05.
+Last updated: 2026-10-16.
 
 ## Deployment
 
@@ -23,6 +23,9 @@ Last updated: 2026-10-05.
 | `ADS_API_KEY` | no | NASA ADS source (phase 2) |
 | `NCBI_API_KEY` | no | Optional, higher PubMed limits |
 | `MCP_AUTH_TOKEN` | yes | Protects `/mcp` |
+| `FIRECRAWL_API_KEY` | not yet | Mandumah tools (copy from the arabic-scholar-mcp Worker) |
+| `EXA_API_KEY` | not yet | Arabic open-access sources, `get_pdf_url` (copy from the arabic-scholar-mcp Worker) |
+| `DB` (D1 binding) | in `wrangler.jsonc` | Analytics. Run `npx wrangler d1 migrations apply arabic-scholar-analytics --remote` once before deploying |
 | `CONTACT_EMAIL` (var) | `dawood.engdawood.com` | Enables Unpaywall, polite pools. Value has no `@`, so Unpaywall will reject it; owner to confirm the address. |
 
 ## Open issues
@@ -31,6 +34,9 @@ Last updated: 2026-10-05.
 - DBLP and IACR blocked from Cloudflare egress IPs. No code fix; possible workaround is a proxy, not planned.
 - `CONTACT_EMAIL` looks malformed (see above).
 - `read_paper` cannot fetch PDFs behind bot challenges (IACR, bioRxiv, many publishers).
+
+- Arabic merge (2026-10-16) is verified with unit tests and mocked fetch only. Needs a live check with the two keys. The old arabic-scholar-mcp Worker can be retired after that.
+- Exa's `google_scholar` platform (Arabic core set) indexes Google Scholar pages through Exa. This is not direct scraping, but it sits close to the "no Google Scholar scraping" rule; owner to confirm.
 
 ## Roadmap
 

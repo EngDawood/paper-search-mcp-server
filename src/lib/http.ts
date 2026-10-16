@@ -1,3 +1,5 @@
+import { reportFetch } from "../analytics/context";
+
 const UA = "paper-search-mcp-server/0.1 (+https://github.com/EngDawood/paper-search-mcp-server)";
 
 export class HttpError extends Error {
@@ -35,8 +37,12 @@ export async function request(url: string, opts: FetchOpts = {}): Promise<Respon
   const cache = (opts.method ?? "GET") === "GET" && cacheTtl > 0 ? edgeCache() : undefined;
   const key = new Request(url, { headers: { Accept: opts.headers?.Accept ?? "*/*" } });
   if (cache) {
+    const t0 = Date.now();
     const hit = await cache.match(key).catch(() => undefined);
-    if (hit) return hit;
+    if (hit) {
+      reportFetch({ url, method: "GET", status: hit.status, ok: true, ms: Date.now() - t0, attempts: 0, cacheHit: true, bytes: contentLength(hit) });
+      return hit;
+    }
   }
   const res = await fetchWithRetry(url, opts);
   if (cache) {
@@ -48,11 +54,33 @@ export async function request(url: string, opts: FetchOpts = {}): Promise<Respon
   return res;
 }
 
+function contentLength(res: Response): number | undefined {
+  const n = Number(res.headers.get("content-length"));
+  return Number.isFinite(n) && res.headers.has("content-length") ? n : undefined;
+}
+
+/** Runs the retry loop and reports the outcome (timing, status, attempts) to the analytics recorder. */
 async function fetchWithRetry(url: string, opts: FetchOpts): Promise<Response> {
+  const t0 = Date.now();
+  const method = opts.method ?? "GET";
+  const state = { attempts: 0, status: undefined as number | undefined };
+  try {
+    const res = await fetchLoop(url, opts, state);
+    reportFetch({ url, method, status: res.status, ok: true, ms: Date.now() - t0, attempts: state.attempts, cacheHit: false, bytes: contentLength(res) });
+    return res;
+  } catch (err) {
+    const status = err instanceof HttpError ? err.status : state.status;
+    reportFetch({ url, method, status, ok: false, ms: Date.now() - t0, attempts: state.attempts, cacheHit: false, error: err instanceof Error ? err.message : String(err) });
+    throw err;
+  }
+}
+
+async function fetchLoop(url: string, opts: FetchOpts, state: { attempts: number; status?: number }): Promise<Response> {
   const { timeoutMs = 20_000, retries = 1 } = opts;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      state.attempts++;
       const res = await fetch(url, {
         method: opts.method ?? "GET",
         body: opts.body,
@@ -60,6 +88,7 @@ async function fetchWithRetry(url: string, opts: FetchOpts): Promise<Response> {
         signal: AbortSignal.timeout(timeoutMs),
         redirect: "follow",
       });
+      state.status = res.status;
       if (res.ok) return res;
       const body = await res.text().catch(() => "");
       lastErr = new HttpError(res.status, url, body);

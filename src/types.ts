@@ -1,4 +1,6 @@
 export interface Env {
+  /** Optional D1 database (binding DB) for usage analytics. Everything no-ops when absent. */
+  DB?: D1Database;
   /** Optional contact email: Crossref polite pool, NCBI, Unpaywall (required for Unpaywall). */
   CONTACT_EMAIL?: string;
   /** Optional NCBI key: raises PubMed/PMC limit from 3 to 10 req/s. */
@@ -15,6 +17,10 @@ export interface Env {
   SPRINGER_API_KEY?: string;
   /** NASA ADS API token (free). Enables the ADS source. */
   ADS_API_KEY?: string;
+  /** Firecrawl API key. Enables the Mandumah tools (scraped through Firecrawl). */
+  FIRECRAWL_API_KEY?: string;
+  /** Exa API key. Enables the Arabic open-access sources (ASJP, SHAMAA, EKB...) and get_pdf_url. */
+  EXA_API_KEY?: string;
   /** Optional bearer token. When set, /mcp requires `Authorization: Bearer <token>`. */
   MCP_AUTH_TOKEN?: string;
 }

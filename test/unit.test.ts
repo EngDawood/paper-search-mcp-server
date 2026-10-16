@@ -93,6 +93,15 @@ describe("dedupe", () => {
     expect(out[0].citations).toBe(5);
     expect(out[0].extra?.found_in).toEqual(["crossref", "semantic"]);
   });
+
+  it("keeps distinct Arabic titles apart and merges the same title with diacritics", () => {
+    const a = paper({ paper_id: "1", title: "الذكاء الاصطناعي في التعليم", source: "mandumah" });
+    const b = paper({ paper_id: "2", title: "تعليم اللغة العربية", source: "mandumah" });
+    const c = paper({ paper_id: "3", title: "الذّكاء الاصطناعيّ في التعليم", source: "asjp" });
+    const out = dedupe([a, b, c]);
+    expect(out).toHaveLength(2);
+    expect(out[0].extra?.found_in).toEqual(["mandumah", "asjp"]);
+  });
 });
 
 describe("OpenAlex", async () => {

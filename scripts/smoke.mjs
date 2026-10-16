@@ -56,6 +56,14 @@ const cases = [
   ["find_open_access_pdf", { doi: "10.1371/journal.pone.0000308" }],
   ["read_paper", { source: "arxiv", paper_id: "1706.03762", max_chars: 1000 }],
   ["read_paper", { source: "pmc", paper_id: "PMC3257301", max_chars: 1000 }],
+  // Cross-source and Arabic tools (Arabic ones need FIRECRAWL_API_KEY / EXA_API_KEY).
+  ["search_all", { query: "الذكاء الاصطناعي في التعليم", max_results_per_source: 2 }],
+  ["cite_paper", { doi: "10.1038/nature14539", styles: ["apa", "bibtex"] }],
+  ["find_pdf_anywhere", { doi: "10.1371/journal.pone.0000308" }],
+  ["mandumah_list_filters", { response_format: "json" }],
+  ["search_arabic_papers", { query: "الذكاء الاصطناعي", max_results_per_source: 2, response_format: "json" }],
+  ["mandumah_search", { query: "التعليم الإلكتروني", response_format: "json" }],
+  ["usage_stats", { days: 7 }],
 ];
 
 const tools = (await rpc("tools/list", {})).tools.map((t) => t.name);
@@ -67,14 +75,14 @@ for (const [name, args] of cases) {
     continue;
   }
   // arXiv asks for one request every 3 s.
-  if (/arxiv/.test(name) || (name === "read_paper" && args.source === "arxiv") || name === "search_papers") await new Promise((r) => setTimeout(r, 3500));
+  if (/arxiv/.test(name) || (name === "read_paper" && args.source === "arxiv") || name === "search_papers" || name === "search_all") await new Promise((r) => setTimeout(r, 3500));
   const t0 = Date.now();
   try {
     const r = await rpc("tools/call", { name, arguments: args });
     const text = r.content?.[0]?.text ?? "";
     if (r.isError) throw new Error(text);
     const data = JSON.parse(text);
-    const n = Array.isArray(data) ? data.length : data.papers?.length ?? data.total_chars ?? data.candidates?.length ?? (data ? 1 : 0);
+    const n = Array.isArray(data) ? data.length : data.papers?.length ?? data.total_chars ?? data.candidates?.length ?? data.results?.length ?? (data ? 1 : 0);
     const errs = data.sources?.filter((s) => s.error).map((s) => `${s.source}: ${s.error}`);
     const ok = n > 0;
     if (!ok) failed++;

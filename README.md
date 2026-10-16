@@ -47,7 +47,18 @@ is almost always rate-limited, so it is hidden until the key is set.
 `SEMANTIC_SCHOLAR_API_KEY` they use Semantic Scholar and retry on OpenAlex (results then have `source: "openalex"`);
 with only `OPENALEX_API_KEY` they use OpenAlex directly; with neither they are hidden.
 
-## Tools (23 without keys, up to 34 with all keys)
+## Arabic sources
+
+Ported from [arabic-scholar-mcp](https://github.com/EngDawood/arabic-scholar-mcp). The Firecrawl and Exa calls use plain `fetch`, with no SDKs.
+
+| Secret | Enables |
+|---|---|
+| `FIRECRAWL_API_KEY` | Mandumah (دار المنظومة): `mandumah_search`, `mandumah_get_record`, `mandumah_get_citation`, Mandumah results in `search_arabic_papers` / `search_all`, Mandumah ids in `cite_paper` |
+| `EXA_API_KEY` | Open-access Arabic repositories through Exa: ASJP, SHAMAA, ResearchGate, Academia.edu, Google Scholar (core set), plus opt-in EKB, DOAJ, eMarefa, Algerian theses and others; `get_pdf_url`; Mandumah fallback (`mandumah_exa`) |
+
+`list_arabic_tools` lists every Arabic platform key. Source quirks are in `docs/sources.md`.
+
+## Tools (28 without keys, up to 45 with all keys)
 
 | Tool | Purpose |
 |---|---|
@@ -60,6 +71,16 @@ with only `OPENALEX_API_KEY` they use OpenAlex directly; with neither they are h
 | `get_citing_papers` / `get_referenced_papers` | Citation graph via Semantic Scholar or OpenAlex (needs either key) |
 | `find_open_access_pdf` | Legal OA PDF links (Europe PMC, arXiv, Unpaywall if `CONTACT_EMAIL` is set, Semantic Scholar if keyed) |
 | `read_paper` | Full text from `pdf_url`, `source` + `paper_id`, or a DOI. Paginate with `offset` / `max_chars`. |
+| `search_all` | One query across the international defaults and the Arabic sources, de-duplicated across both (`scope`: all, international, arabic) |
+| `find_pdf_anywhere` | Legal PDF from a DOI, a title (Crossref title match, plus ASJP/SHAMAA for Arabic titles) or an ASJP/SHAMAA page URL |
+| `cite_paper` | APA, MLA, Chicago, Harvard, BibTeX for a DOI or arXiv id (DOI content negotiation); APA and MLA for a Mandumah record |
+| `search_arabic_papers` | Mandumah plus Arabic open-access repositories, grouped by source (needs either Arabic key) |
+| `mandumah_search` / `mandumah_get_record` / `mandumah_get_citation` | Mandumah search with filters, full record, citations (`FIRECRAWL_API_KEY`) |
+| `mandumah_list_filters` / `list_arabic_tools` | Mandumah filter values; Arabic tools and platform keys |
+| `get_pdf_url` | Direct PDF link from an ASJP or SHAMAA article page (`EXA_API_KEY`) |
+| `usage_stats` | Usage analytics from D1: totals, daily series, top tools and queries, per-source error rate and p50/p95 latency, recent errors (needs the `DB` binding and `MCP_AUTH_TOKEN`, since it returns stored queries) |
+
+Arabic tools take `response_format`: `markdown` (default), `json` or `text`.
 
 All search tools accept `year`: `"2023"`, `"2019-2023"`, `"2020-"` or `"-2015"`.
 
@@ -119,6 +140,16 @@ Claude Desktop / others (via `mcp-remote`):
 }
 ```
 
+## Usage analytics (D1)
+
+With the `DB` binding (D1 database `arabic-scholar-analytics`, shared with the old Arabic server), every tool call is logged:
+`invocations` (tool, args, status, latency, client, country), `source_calls` (each upstream request: host, status, latency,
+retries, cache hit; key-like query values are redacted), `queries` (text, normalized Arabic form, language), `query_results`
+(top 10 papers per search) and `clients` (MCP handshakes). Data is kept forever. Without the binding nothing is logged.
+Apply migrations with `npx wrangler d1 migrations apply arabic-scholar-analytics --remote`.
+
+Note: `queries` stores what people search for. Keep `/mcp` behind `MCP_AUTH_TOKEN`.
+
 ## Known limits
 
 - **Semantic Scholar** is hidden until `SEMANTIC_SCHOLAR_API_KEY` is set (the keyless pool is almost always 429).
@@ -146,4 +177,5 @@ The projects below were used as references for API endpoints, query patterns and
 | [lecigarevolant/arxiv-mcp-server-gpt](https://github.com/lecigarevolant/arxiv-mcp-server-gpt) | arXiv lookup by id and full-text loading |
 | [alexgenovese/mcp-arxiv](https://github.com/alexgenovese/mcp-arxiv) | arXiv Atom XML parsing in TypeScript |
 | [tfscharff/doi-mcp](https://github.com/tfscharff/doi-mcp) | Idea and endpoints for zbMATH, ERIC and INSPIRE-HEP |
+| [EngDawood/arabic-scholar-mcp](https://github.com/EngDawood/arabic-scholar-mcp) | Same owner. Its Mandumah parsers, Exa cleaner and Arabic tools were moved into `src/arabic` |
 | [kyeshmz/academix-mcp](https://github.com/kyeshmz/academix-mcp) | Reference for an MCP server running on Cloudflare Workers |
