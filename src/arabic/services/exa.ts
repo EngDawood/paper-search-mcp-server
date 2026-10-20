@@ -3,6 +3,7 @@
  * The key goes in the x-api-key header only.
  */
 import { request } from "../../lib/http";
+import { withKeys } from "../../lib/keys";
 
 const EXA_BASE = "https://api.exa.ai";
 
@@ -51,16 +52,20 @@ export function buildContentsBody(urls: string[], maxCharacters: number): Record
   return { urls, text: { maxCharacters } };
 }
 
-async function post(apiKey: string, path: string, body: Record<string, unknown>): Promise<ExaResponse> {
-  const res = await request(`${EXA_BASE}${path}`, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify(body),
-    timeoutMs: 30_000,
-    retries: 2,
+/** `apiKey` may hold several keys separated by commas; a spent or rate-limited key falls through to the next. */
+function post(apiKey: string, path: string, body: Record<string, unknown>): Promise<ExaResponse> {
+  return withKeys(apiKey, async (key) => {
+    const res = await request(`${EXA_BASE}${path}`, {
+      method: "POST",
+      headers: headers(key),
+      body: JSON.stringify(body),
+      timeoutMs: 30_000,
+      retries: 2,
+      failFast: apiKey.includes(",") ? [429] : undefined,
+    });
+    const json = (await res.json()) as { results?: ExaRawResult[] };
+    return { results: json.results ?? [] };
   });
-  const json = (await res.json()) as { results?: ExaRawResult[] };
-  return { results: json.results ?? [] };
 }
 
 export const exaSearch = (apiKey: string, query: string, o: ExaSearchOptions) =>

@@ -21,6 +21,8 @@ export interface FetchOpts {
   cacheTtl?: number;
   method?: string;
   body?: string;
+  /** Statuses to throw at once, without the 429/5xx retry (used to switch API key on 429). */
+  failFast?: number[];
 }
 
 function edgeCache(): Cache | undefined {
@@ -92,9 +94,9 @@ async function fetchLoop(url: string, opts: FetchOpts, state: { attempts: number
       if (res.ok) return res;
       const body = await res.text().catch(() => "");
       lastErr = new HttpError(res.status, url, body);
-      if (res.status !== 429 && res.status < 500) throw lastErr;
+      if (opts.failFast?.includes(res.status) || (res.status !== 429 && res.status < 500)) throw lastErr;
     } catch (err) {
-      if (err instanceof HttpError && err.status !== 429 && err.status < 500) throw err;
+      if (err instanceof HttpError && (opts.failFast?.includes(err.status) || (err.status !== 429 && err.status < 500))) throw err;
       lastErr = err;
     }
     if (attempt < retries) await sleep(800 * 2 ** attempt);

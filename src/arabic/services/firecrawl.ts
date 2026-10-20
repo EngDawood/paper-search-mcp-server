@@ -3,6 +3,7 @@
  * The key goes in the Authorization header only.
  */
 import { request } from "../../lib/http";
+import { withKeys } from "../../lib/keys";
 
 const FIRECRAWL_SCRAPE_URL = "https://api.firecrawl.dev/v1/scrape";
 
@@ -27,14 +28,18 @@ export function buildScrapeBody(url: string, opts: ScrapeOptions): Record<string
   return { url, ...opts };
 }
 
+/** `apiKey` may hold several keys separated by commas; a spent or rate-limited key falls through to the next. */
 export async function scrapeUrl(apiKey: string, url: string, opts: ScrapeOptions): Promise<ScrapeResult> {
-  const res = await request(FIRECRAWL_SCRAPE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify(buildScrapeBody(url, opts)),
-    timeoutMs: 60_000,
-    retries: 2,
-  });
+  const res = await withKeys(apiKey, (key) =>
+    request(FIRECRAWL_SCRAPE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify(buildScrapeBody(url, opts)),
+      timeoutMs: 60_000,
+      retries: 2,
+      failFast: apiKey.includes(",") ? [429] : undefined,
+    }),
+  );
   const json = (await res.json().catch(() => undefined)) as
     | { success?: boolean; error?: string; warning?: string; data?: Record<string, unknown> }
     | undefined;

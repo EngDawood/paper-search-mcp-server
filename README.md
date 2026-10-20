@@ -56,6 +56,10 @@ Ported from [arabic-scholar-mcp](https://github.com/EngDawood/arabic-scholar-mcp
 | `FIRECRAWL_API_KEY` | Mandumah (دار المنظومة): `mandumah_search`, `mandumah_get_record`, `mandumah_get_citation`, Mandumah results in `search_arabic_papers` / `search_all`, Mandumah ids in `cite_paper` |
 | `EXA_API_KEY` | Open-access Arabic repositories through Exa: ASJP, SHAMAA, ResearchGate, Academia.edu, Google Scholar (core set), plus opt-in EKB, DOAJ, eMarefa, Algerian theses and others; `get_pdf_url`; Mandumah fallback (`mandumah_exa`) |
 
+**Several keys.** Both secrets accept a comma-separated list (`key1,key2,key3`). Each request starts at a random key and moves to the next on HTTP 401, 402 or 429.
+
+**Client keys.** A client can send its own keys in the headers `X-Exa-Api-Key` and `X-Firecrawl-Api-Key` (one key or a comma list). For that request they replace the server's keys, so the server's quota is never used, and the tools appear even when the server has no key. `/mcp` still needs the bearer token. Keep these headers in a client config you control: anyone who can read the config can read the keys.
+
 `list_arabic_tools` lists every Arabic platform key. Source quirks are in `docs/sources.md`.
 
 ## Tools (28 without keys, up to 45 with all keys)
