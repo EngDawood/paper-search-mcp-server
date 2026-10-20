@@ -1,5 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createRecorder } from "./analytics";
+import { envWithClientKeys } from "./lib/keys";
 import { createServer, VERSION } from "./server";
 import { activeSources } from "./sources";
 import type { Env } from "./types";
@@ -7,7 +8,7 @@ import type { Env } from "./types";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Mcp-Session-Id, Mcp-Protocol-Version, Last-Event-ID",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Mcp-Session-Id, Mcp-Protocol-Version, Last-Event-ID, X-Exa-Api-Key, X-Firecrawl-Api-Key",
   "Access-Control-Expose-Headers": "Mcp-Session-Id, Mcp-Protocol-Version",
 };
 
@@ -38,7 +39,8 @@ async function handleMcp(req: Request, env: Env, ctx: ExecutionContext): Promise
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   const rec = createRecorder({ db: env.DB, waitUntil: (p) => ctx.waitUntil(p), request: req });
   await rec.observe(req);
-  const server = createServer(env, rec);
+  // Clients may bring their own Exa / Firecrawl keys in headers; they replace the server's keys for this request.
+  const server = createServer(envWithClientKeys(env, req), rec);
   await server.connect(transport);
   return transport.handleRequest(req);
 }
